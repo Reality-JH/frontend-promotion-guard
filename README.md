@@ -8,6 +8,16 @@ FPG audits emitted CSS, evaluates real browser-computed styles, compares screens
 
 FPG does not replace functional testing, security testing, or human acceptance. A human must confirm a correct page before explicitly updating visual baselines.
 
+## The failure this is meant to catch
+
+These two screenshots show the kind of release that can pass a build, return HTTP 200, and still be visibly wrong. The first page has lost its intended layout and controls; the second is the same area after the frontend assets are served correctly.
+
+| Broken after release | Correct rendering |
+| --- | --- |
+| ![Broken frontend layout](./docs/assets/frontend-css-broken.png) | ![Correct frontend layout](./docs/assets/frontend-css-restored.png) |
+
+The images are illustrative incident evidence, not visual baselines for this repository. FPG catches the underlying class of failure with CSS checks, computed-style assertions, and screenshot comparison before promotion.
+
 ## Quick start
 
 Node.js 20+ and a system Chrome or Edge are required. Docker is optional unless `promote` or `rollback` is used.
@@ -38,7 +48,7 @@ The HTML report includes baseline, current, and diff images, image identifiers, 
 ## GitHub Actions
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.1.0
+- uses: Reality_JH/frontend-promotion-guard@v0.1.1
   with:
     config: fpg.yml
     command: verify
@@ -49,7 +59,7 @@ The HTML report includes baseline, current, and diff images, image identifiers, 
     path: release-evidence
 ```
 
-Enable this reference after the public `Reality_JH/frontend-promotion-guard` repository and `v0.1.0` tag exist; no remote repository has been created yet. Build and start the target before this step. See [`.github/workflows/example.yml`](./.github/workflows/example.yml) for a runnable Vite/React example and [`.github/workflows/matrix.yml`](./.github/workflows/matrix.yml) for the cross-platform matrix.
+Build and start the target before this step. See [`.github/workflows/example.yml`](./.github/workflows/example.yml) for a runnable Vite/React example and [`.github/workflows/matrix.yml`](./.github/workflows/matrix.yml) for the cross-platform matrix.
 
 ## Maintainer and contact
 

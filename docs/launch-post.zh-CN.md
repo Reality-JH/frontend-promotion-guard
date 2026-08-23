@@ -6,6 +6,14 @@
 
 页面可以成功返回 HTML，同时 CSS 已经丢失、没有编译，或者静态资源路径指错。容器仍然健康，负载均衡仍然满意。用户打开页面，却看到布局已经悄悄坏掉。
 
+下面这组对比图把问题说得更直接：
+
+| 发布后已损坏 | 正常渲染 |
+| --- | --- |
+| ![损坏的前端布局](./assets/frontend-css-broken.png) | ![正常的前端布局](./assets/frontend-css-restored.png) |
+
+重点不是阻止所有视觉变化，而是不要让 CSS 已经丢失的页面在构建和健康检查都为绿时继续进入生产环境。
+
 当前端不是你的主战场时，这种问题尤其折磨人。你不需要再引入一套设计系统。你需要的是一个小而稳定的答案：
 
 > 用户实际拿到的页面，是否还和我们批准的页面一致？
@@ -68,10 +76,10 @@ node dist/cli.js verify --config fpg.example.yml
 
 ## GitHub Actions
 
-仓库包含可运行的 Vite/React 工作流和跨平台矩阵。正式仓库与 `v0.1.0` tag 创建后，最小接入是：
+仓库包含可运行的 Vite/React 工作流和跨平台矩阵。最小接入是：
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.1.0
+- uses: Reality_JH/frontend-promotion-guard@v0.1.1
   with:
     config: fpg.yml
     command: verify

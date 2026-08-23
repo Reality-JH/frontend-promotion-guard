@@ -6,6 +6,14 @@ Those signals are useful. They are not enough for a browser.
 
 A page can return its HTML successfully while its CSS is missing, uncompiled, or pointing at the wrong asset path. The container stays healthy. The load balancer stays happy. A user opens the page and sees a layout that has quietly fallen apart.
 
+Here is the failure in plain sight:
+
+| Broken after release | Correct rendering |
+| --- | --- |
+| ![Broken frontend layout](./assets/frontend-css-broken.png) | ![Correct frontend layout](./assets/frontend-css-restored.png) |
+
+The point is not that every visual change is a failure. The point is that a page that lost its CSS should not reach production while build and health checks remain green.
+
 That failure is especially frustrating when frontend work is not your main job. You do not need another design system. You need a small, repeatable answer to one question:
 
 > Does the page users will receive still look and behave like the page we approved?
@@ -68,10 +76,10 @@ That keeps the useful part of frontend release work visible to people who spend 
 
 ## GitHub Actions
 
-The repository includes a runnable Vite/React workflow and a cross-platform matrix. After the public repository and `v0.1.0` tag exist, the smallest integration is:
+The repository includes a runnable Vite/React workflow and a cross-platform matrix. The smallest integration is:
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.1.0
+- uses: Reality_JH/frontend-promotion-guard@v0.1.1
   with:
     config: fpg.yml
     command: verify

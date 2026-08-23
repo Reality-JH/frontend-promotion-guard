@@ -8,6 +8,16 @@ FPG 在晋升正式镜像前依次检查构建后 CSS 语义、浏览器真实�
 
 它不替代功能测试、安全测试和人工验收。视觉基线必须由人确认页面正确后显式更新。
 
+## 它要拦住的事故
+
+下面两张图展示了一类很容易漏过的发布事故：构建成功、HTTP 返回 200，但页面布局已经坏了。左图是前端资源没有正确生效时的结果，右图是资源恢复后的页面。
+
+| 发布后已损坏 | 正常渲染 |
+| --- | --- |
+| ![损坏的前端布局](./docs/assets/frontend-css-broken.png) | ![正常的前端布局](./docs/assets/frontend-css-restored.png) |
+
+这两张图是事故示意，不是本仓库的视觉基线。FPG 用 CSS 产物检查、计算样式断言和截图对比，在晋升前拦截同类问题。
+
 ## 快速开始
 
 要求 Node.js 20+，以及本机 Chrome 或 Edge。Docker 仅在使用 `promote`/`rollback` 时需要。
@@ -69,7 +79,7 @@ fpg report
 ## GitHub Actions 最小接入
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.1.0
+- uses: Reality_JH/frontend-promotion-guard@v0.1.1
   with:
     config: fpg.yml
     command: verify
@@ -80,7 +90,7 @@ fpg report
     path: release-evidence
 ```
 
-上面的引用需要在 `Reality_JH/frontend-promotion-guard` 正式创建并发布 `v0.1.0` 后启用；当前本地仓库尚未创建远程仓库。调用前需要完成项目构建、启动待测服务，并确保 runner 有 Chrome。可执行的 Vite/React 启动流程见 [`.github/workflows/example.yml`](./.github/workflows/example.yml)，跨平台矩阵见 [`.github/workflows/matrix.yml`](./.github/workflows/matrix.yml)。发布版 Action 必须包含构建后的 `dist/`、`package.json` 和 `package-lock.json`。
+调用前需要完成项目构建、启动待测服务，并确保 runner 有 Chrome。可执行的 Vite/React 启动流程见 [`.github/workflows/example.yml`](./.github/workflows/example.yml)，跨平台矩阵见 [`.github/workflows/matrix.yml`](./.github/workflows/matrix.yml)。发布版 Action 必须包含构建后的 `dist/`、`package.json` 和 `package-lock.json`。
 
 ## 维护者与联系
 
