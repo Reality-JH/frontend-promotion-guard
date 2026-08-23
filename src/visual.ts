@@ -16,6 +16,8 @@ const browserCandidates = [
   "/usr/bin/microsoft-edge",
   "/usr/bin/chromium",
   "/usr/bin/chromium-browser",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
 ].filter(Boolean) as string[];
 
 export async function findBrowser(config: FpgConfig) {

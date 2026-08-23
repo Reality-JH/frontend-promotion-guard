@@ -14,6 +14,8 @@ const browserCandidates = [
     "/usr/bin/microsoft-edge",
     "/usr/bin/chromium",
     "/usr/bin/chromium-browser",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
 ].filter(Boolean);
 export async function findBrowser(config) {
     for (const path of [config.browserPath, ...browserCandidates].filter(Boolean))
