@@ -1,0 +1,7 @@
+node_modules/
+examples/vite-react/dist/
+release-evidence/
+visual-baselines/*.png
+*.log
+.env*
+!.env.example

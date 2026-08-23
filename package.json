@@ -1,0 +1,46 @@
+{
+  "name": "frontend-promotion-guard",
+  "version": "0.1.0",
+  "description": "Release gate for CSS integrity, computed styles, visual regression, and safe Docker promotion.",
+  "type": "module",
+  "bin": {
+    "fpg": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "action.yml",
+    "fpg.example.yml",
+    "LICENSE",
+    "README.md",
+    "README.zh-CN.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --test-concurrency=1",
+    "license:check": "node scripts/check-licenses.mjs",
+    "example:build": "vite build --config examples/vite-react/vite.config.ts",
+    "example:serve": "vite preview --config examples/vite-react/vite.config.ts --host 127.0.0.1 --port 4173",
+    "prepack": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "pixelmatch": "7.1.0",
+    "playwright-core": "1.55.0",
+    "pngjs": "7.0.0",
+    "yaml": "2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.3.0",
+    "@types/pngjs": "6.0.5",
+    "@vitejs/plugin-react": "5.2.0",
+    "license-checker-rseidelsohn": "^5.0.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "typescript": "5.9.2",
+    "vite": "7.3.0"
+  }
+}

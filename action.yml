@@ -1,0 +1,20 @@
+name: Frontend Promotion Guard
+description: Audit CSS and run computed-style and visual regression gates.
+inputs:
+  config:
+    description: Path to the FPG YAML configuration in the caller repository.
+    required: false
+    default: fpg.yml
+  command:
+    description: FPG command (audit, verify, capture, compare).
+    required: false
+    default: verify
+runs:
+  using: composite
+  steps:
+    - name: Install Frontend Promotion Guard runtime
+      shell: bash
+      run: npm ci --omit=dev --ignore-scripts --prefix "${{ github.action_path }}"
+    - name: Run Frontend Promotion Guard
+      shell: bash
+      run: node "${{ github.action_path }}/dist/cli.js" "${{ inputs.command }}" --config "${{ inputs.config }}"

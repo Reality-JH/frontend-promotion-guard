@@ -1,0 +1,13 @@
+baseUrl: http://127.0.0.1:8080
+routes: [{ name: home, path: /, readySelector: main }]
+viewports: [{ width: 768, height: 900 }]
+cssAudit:
+  files: [examples/vite-react/dist/assets/*.css]
+  forbiddenTokens: ["@theme", "@utility", "@custom-variant", "@apply"]
+  requiredSelectors: [".flex", ".grid", ".hidden"]
+computedStyles:
+  - { selector: ".status-grid", property: display, equals: grid }
+visual:
+  maxDiffPixelRatio: 0.12
+  baselineDir: ./visual-baselines
+  evidenceDir: ./release-evidence/broken-css

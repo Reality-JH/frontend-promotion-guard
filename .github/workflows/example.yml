@@ -1,0 +1,26 @@
+name: Frontend promotion gate
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run license:check
+      - run: npm run example:build
+      - run: npm run example:serve &
+      - run: for attempt in {1..30}; do curl --fail --silent http://127.0.0.1:4173 && exit 0; sleep 1; done; exit 1
+      # Replace this reference after the public repository and v0.1.0 tag exist.
+      - uses: Reality_JH/frontend-promotion-guard@v0.1.0
+        with:
+          config: fpg.yml
+          command: verify
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-promotion-evidence
+          path: release-evidence

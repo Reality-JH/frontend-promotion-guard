@@ -1,0 +1,33 @@
+baseUrl: http://127.0.0.1:4173
+routes:
+  - { name: home, path: /, readySelector: main }
+  - { name: details, path: /details, readySelector: "[data-page=details]" }
+viewports:
+  - { width: 1440, height: 1000 }
+  - { width: 1280, height: 900 }
+  - { width: 1024, height: 900 }
+  - { width: 768, height: 900 }
+cssAudit:
+  files: [examples/vite-react/dist/assets/*.css]
+  forbiddenTokens: ["@theme", "@utility", "@custom-variant", "@apply"]
+  requiredSelectors: [".flex", ".grid", ".hidden"]
+computedStyles:
+  - { selector: main, property: display, notEquals: none }
+  - { selector: ".status-grid", property: display, equals: grid }
+visual:
+  maxDiffPixelRatio: 0.12
+  pixelThreshold: 0.2
+  baselineDir: ./visual-baselines
+  evidenceDir: ./release-evidence/docker
+  retention: 10
+docker:
+  candidateImage: fpg-demo:seed
+  productionImage: fpg-demo:latest
+  candidatePort: 43100
+  productionPort: 43000
+  containerPort: 8080
+  candidateContainer: fpg-demo-candidate
+  productionContainer: fpg-demo-production
+  productionArgs: ["--env", "FPG_BREAK_CSS=1"]
+  healthPath: /
+  rollback: true
