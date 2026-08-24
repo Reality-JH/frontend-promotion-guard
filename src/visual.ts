@@ -1,5 +1,6 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { createHash } from "node:crypto";
+import { basename, join, relative } from "node:path";
 import pixelmatch from "pixelmatch";
 import { chromium } from "playwright-core";
 import { PNG } from "pngjs";
@@ -23,6 +24,12 @@ const browserCandidates = [
 export async function findBrowser(config: FpgConfig) {
   for (const path of [config.browserPath, ...browserCandidates].filter(Boolean) as string[]) if (await exists(path)) return path;
   throw new Error("No Chrome or Edge executable found; set browserPath or FPG_BROWSER_PATH");
+}
+
+export async function browserIdentity(config: FpgConfig) {
+  const path = await findBrowser(config);
+  const browser = await chromium.launch({ executablePath: path, headless: true });
+  try { return `${browser.browserType().name()} ${browser.version()} (${path})`; } finally { await browser.close(); }
 }
 
 export async function captureAndCompare(config: FpgConfig, runDir: string, options: { compare: boolean; update: boolean; baseUrl?: string }) {
@@ -103,6 +110,10 @@ export async function captureAndCompare(config: FpgConfig, runDir: string, optio
   }
   if (failures.length) throw Object.assign(new Error(failures.join("\n")), { checks, visuals });
   for (const item of pendingBaselines) await copyFile(item.current, item.baseline);
+  if (options.update) {
+    const files = await Promise.all(pendingBaselines.map(async (item) => ({ file: basename(item.baseline), sha256: createHash("sha256").update(await readFile(item.baseline)).digest("hex") })));
+    await writeFile(join(config.visual.baselineDir, "manifest.json"), JSON.stringify({ generatedAt: new Date().toISOString(), files }, null, 2));
+  }
   return { checks, visuals };
 }
 

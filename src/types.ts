@@ -16,6 +16,7 @@ export type DockerConfig = {
   productionArgs: string[];
   healthPath: string;
   rollback: boolean;
+  requireImmutableImage: boolean;
 };
 
 export type FpgConfig = {
@@ -40,9 +41,16 @@ export type RunRecord = {
   baseUrl: string;
   commit: string;
   candidateImage?: string;
+  candidateImageId?: string;
   productionImage?: string;
+  previousProductionImageId?: string;
+  finalProductionImageId?: string;
   rollbackImage?: string;
   rolledBack?: boolean;
+  finalState?: "promoted" | "restored" | "failed";
+  environment?: { platform: string; node: string; browser?: string };
+  configSummary?: { routes: string[]; viewports: string[]; maxDiffPixelRatio: number; pixelThreshold: number };
+  stages?: Array<{ name: "candidate" | "production" | "rollback"; status: "running" | "passed" | "failed"; startedAt: string; finishedAt?: string }>;
   checks: CheckResult[];
   visuals: VisualResult[];
 };

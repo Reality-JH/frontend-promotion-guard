@@ -47,3 +47,6 @@ docker:
   dockerfile: examples/vite-react/Dockerfile
   healthPath: /
   rollback: true
+  # Require a digest or image ID when promoting an existing candidate or rolling back.
+  # A candidate built by FPG is resolved to its image ID automatically.
+  requireImmutableImage: false

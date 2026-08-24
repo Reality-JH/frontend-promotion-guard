@@ -6,3 +6,5 @@ visual-baselines/*.png
 *.log
 .env*
 !.env.example
+.fpg-release.lock/
+.fpg-docker-integration.yml

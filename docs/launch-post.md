@@ -79,7 +79,7 @@ That keeps the useful part of frontend release work visible to people who spend 
 The repository includes a runnable Vite/React workflow and a cross-platform matrix. The smallest integration is:
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.1.1
+- uses: Reality_JH/frontend-promotion-guard@v0.2.0
   with:
     config: fpg.yml
     command: verify

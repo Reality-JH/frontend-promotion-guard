@@ -1,6 +1,6 @@
 # Release checklist
 
-This checklist is for the first public release. It records what can be completed locally and what still requires a real GitHub repository.
+This checklist records the release evidence required for v0.2.0.
 
 ## Local release preparation
 
@@ -12,14 +12,18 @@ This checklist is for the first public release. It records what can be completed
 - [x] Ubuntu, Windows, and macOS Node/browser matrix documented.
 - [x] Ubuntu Docker build documented.
 - [x] Unit, CLI, typecheck, build, browser, failure, promotion, and rollback checks completed locally.
-- [ ] Configure Git author identity and create the first local commit.
+- [x] Git author identity and public repository configured.
+- [x] Runtime configuration validation covers routes, viewports, assertions, thresholds, URLs, ports, and Docker conflicts.
+- [x] Docker integration covers promotion, candidate rejection, production restoration, and rollback verification failure.
+- [x] Reports record runtime, browser, stage timing, immutable image IDs, and final production state.
+- [x] Release operations use a local lock and the example workflow uses GitHub concurrency.
+- [x] Baseline updates generate SHA-256 manifests and remain unavailable from the GitHub Action.
 
 ## GitHub release steps
 
-1. Create the repository as `Reality_JH/frontend-promotion-guard`.
-2. Push the local `main` branch.
-3. Create tag `v0.1.0` only after the public repository exists.
-4. Confirm the Action reference `Reality_JH/frontend-promotion-guard@v0.1.0` resolves.
-5. Enable the example and matrix workflows.
-6. Upload a failed-run evidence artifact once and open the generated HTML report.
-7. Publish the release notes from `docs/launch-post.md`.
+1. Run the full local verification suite.
+2. Push `main` and confirm the cross-platform and Docker integration jobs pass.
+3. Create tag `v0.2.0` from the verified commit.
+4. Confirm `Reality_JH/frontend-promotion-guard@v0.2.0` resolves.
+5. Open the uploaded failed-run evidence report and confirm the final image ID and rollback state.
+6. Publish the bilingual release notes from `docs/news-release.md` and `docs/news-release.zh-CN.md`.

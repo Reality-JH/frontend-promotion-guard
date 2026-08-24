@@ -43,12 +43,16 @@ Set `browserPath` or `FPG_BROWSER_PATH` to override system browser discovery. Re
 
 `audit`, `capture`, `compare`, `verify`, `baseline update`, `promote`, `rollback IMAGE`, and `report` are available. Only `baseline update` writes baselines. A failed test never replaces them.
 
-The HTML report includes baseline, current, and diff images, image identifiers, Git commit, test results, and rollback state. External commands are spawned with argument arrays rather than shell strings. Common Cookie, Authorization, token, API key, password, and secret patterns are redacted from command output; configuration files must still contain no secrets.
+The HTML report includes baseline, current, and diff images, immutable image IDs, Git commit, runtime and browser versions, stage timings, test results, final production state, and rollback state. External commands are spawned with argument arrays rather than shell strings. Common Cookie, Authorization, token, API key, password, and secret patterns are redacted from command output; configuration files must still contain no secrets.
+
+Configuration is validated before a browser or Docker operation starts. Set `docker.requireImmutableImage: true` to require a digest or image ID for an existing candidate and explicit rollback. FPG records the resolved candidate, previous production, and final production image IDs even when ordinary tags are used.
+
+`promote` and `rollback` share a repository-local release lock. Concurrent release operations fail with the lock owner's PID, start time, and commit. CI workflows should also use native workflow concurrency because a local lock cannot coordinate separate runners.
 
 ## GitHub Actions
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.1.1
+- uses: Reality_JH/frontend-promotion-guard@v0.2.0
   with:
     config: fpg.yml
     command: verify
@@ -71,11 +75,15 @@ Maintainer: `Reality_JH`. Use repository Issues for ordinary questions. Report s
 npm run license:check
 ```
 
-Every push and pull request scans production dependency licenses. The allowlist and audit record are documented in [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md).
+Every push and pull request scans production dependency licenses and runs the npm production vulnerability audit at high severity. The allowlist and license record are documented in [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md).
 
 ## Docker platform matrix
 
-`.github/workflows/matrix.yml` runs Node, browser, test, and license checks on Ubuntu, Windows, and macOS, and performs a real Docker build on Ubuntu. Promotion should still be exercised on the target Docker Desktop/Linux runner because runtime, port, and browser-path behavior varies by platform.
+`.github/workflows/matrix.yml` runs Node 20 and 22 browser, test, and license checks on Ubuntu, Windows, and macOS. Its Ubuntu Docker job executes four end-to-end scenarios: successful promotion, candidate rejection without production mutation, production failure with verified restoration, and rollback verification failure. Every scenario asserts the final production container image ID.
+
+## Baseline review
+
+`baseline update` writes `visual-baselines/manifest.json` with a SHA-256 digest for every approved image. The GitHub Action intentionally does not allow baseline updates. Update baselines locally, review the old image, current image, and diff, then commit image and manifest changes through a pull request. Pin the runner OS, browser major version, and fonts when pixel stability matters.
 
 ## Development
 

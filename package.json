@@ -1,7 +1,7 @@
 {
   "name": "frontend-promotion-guard",
-  "version": "0.1.1",
-  "description": "Release gate for CSS integrity, computed styles, visual regression, and safe Docker promotion.",
+  "version": "0.2.0",
+  "description": "Release gate for CSS integrity, computed styles, visual regression, and candidate-gated Docker promotion.",
   "type": "module",
   "bin": {
     "fpg": "dist/cli.js"
@@ -17,7 +17,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test --test-concurrency=1",
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "test:docker": "node scripts/docker-integration.mjs",
     "license:check": "node scripts/check-licenses.mjs",
     "example:build": "vite build --config examples/vite-react/vite.config.ts",
     "example:serve": "vite preview --config examples/vite-react/vite.config.ts --host 127.0.0.1 --port 4173",
@@ -31,16 +32,15 @@
     "pixelmatch": "7.1.0",
     "playwright-core": "1.55.0",
     "pngjs": "7.0.0",
-    "yaml": "2.8.1"
+    "yaml": "2.9.0"
   },
   "devDependencies": {
     "@types/node": "24.3.0",
     "@types/pngjs": "6.0.5",
     "@vitejs/plugin-react": "5.2.0",
-    "license-checker-rseidelsohn": "^5.0.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "typescript": "5.9.2",
-    "vite": "7.3.0"
+    "vite": "7.3.6"
   }
 }

@@ -6,3 +6,4 @@ export declare function run(command: string, args: string[], cwd?: string): Prom
 export declare function pruneRuns(evidenceDir: string, retention: number): Promise<void>;
 export declare function resolveInside(root: string, path: string): string;
 export declare function fileName(path: string): string;
+export declare function withReleaseLock<T>(root: string, commit: string, operation: () => Promise<T>): Promise<T>;

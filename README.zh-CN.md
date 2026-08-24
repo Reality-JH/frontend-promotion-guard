@@ -74,12 +74,16 @@ fpg report
 - `rollback IMAGE`：显式恢复指定不可变镜像。
 - `report`：重新生成最近一次运行的 HTML 报告。
 
-测试失败永远不会覆盖基线。报告含基线图、当前图、差异图、镜像标识、Git commit、测试结果和回退信息。
+测试失败永远不会覆盖基线。报告含基线图、当前图、差异图、不可变镜像 ID、Git commit、运行环境与浏览器版本、阶段耗时、测试结果、最终生产状态和回退信息。
+
+配置会在浏览器或 Docker 操作开始前完成运行时校验。启用 `docker.requireImmutableImage: true` 后，已有候选镜像和显式回退参数必须使用 digest 或镜像 ID。即使配置使用普通标签，报告仍会记录候选、晋升前正式环境和最终正式环境的实际镜像 ID。
+
+`promote` 和 `rollback` 共用仓库本地发布锁。并发操作会失败，并显示锁持有者的 PID、开始时间和 commit。CI 还应配置工作流原生的 `concurrency`，因为本地锁无法协调不同 runner。
 
 ## GitHub Actions 最小接入
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.1.1
+- uses: Reality_JH/frontend-promotion-guard@v0.2.0
   with:
     config: fpg.yml
     command: verify
@@ -102,11 +106,15 @@ fpg report
 npm run license:check
 ```
 
-CI 每次推送和 Pull Request 都执行生产依赖许可证扫描；当前允许列表与审计结果见 [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md)。新增依赖若使用未允许许可证，扫描会失败。
+CI 每次推送和 Pull Request 都执行生产依赖许可证扫描，并运行 npm 高等级生产依赖漏洞审计；当前允许列表与许可证结果见 [`THIRD_PARTY_LICENSES.md`](./THIRD_PARTY_LICENSES.md)。新增依赖若使用未允许许可证，扫描会失败。
 
 ## Docker 平台矩阵
 
-`.github/workflows/matrix.yml` 在 Ubuntu、Windows 和 macOS 上执行 Node、浏览器、测试和许可证检查，并在 Ubuntu 上执行真实 Docker 构建。Docker 候选晋升仍建议在实际 Docker Desktop/Linux runner 上按项目配置执行；不同平台的镜像运行时、端口占用和浏览器路径必须以实际 runner 为准。
+`.github/workflows/matrix.yml` 使用 Node 20 和 22，在 Ubuntu、Windows 和 macOS 上执行浏览器、测试和许可证检查。Ubuntu Docker 任务会完整执行四种场景：正常晋升、候选失败且正式环境不变、正式复验失败后验证恢复、回退验收失败。每种场景都会核对最终正式容器的镜像 ID。
+
+## 基线审批
+
+`baseline update` 会生成 `visual-baselines/manifest.json`，记录每张已批准图片的 SHA-256。GitHub Action 刻意不允许更新基线。应在本地显式更新，人工检查旧图、当前图和差异图，再通过 Pull Request 提交图片与清单变化。对像素稳定性要求较高时，应固定 runner 操作系统、浏览器大版本和字体。
 
 ## Docker 晋升模型
 

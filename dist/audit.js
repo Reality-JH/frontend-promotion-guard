@@ -5,11 +5,12 @@ export async function auditCss(config) {
     if (files.length === 0)
         throw new Error(`CSS audit found no files for: ${config.cssAudit.files.join(", ")}`);
     const css = (await Promise.all([...new Set(files)].map((file) => readFile(file, "utf8")))).join("\n");
+    const semanticCss = css.replace(/\/\*[\s\S]*?\*\//g, "");
     const checks = [{ name: "CSS files", status: "passed", detail: `${files.length} file(s), ${Buffer.byteLength(css)} bytes` }];
     for (const token of config.cssAudit.forbiddenTokens)
-        checks.push(result(`Forbidden token ${token}`, !css.includes(token), css.includes(token) ? "found" : "not found"));
+        checks.push(result(`Forbidden token ${token}`, !semanticCss.includes(token), semanticCss.includes(token) ? "found" : "not found"));
     for (const selector of config.cssAudit.requiredSelectors)
-        checks.push(result(`Required selector ${selector}`, selectorPresent(css, selector), selectorPresent(css, selector) ? "found" : "missing"));
+        checks.push(result(`Required selector ${selector}`, selectorPresent(semanticCss, selector), selectorPresent(semanticCss, selector) ? "found" : "missing"));
     try {
         assertChecks(checks);
     }
@@ -20,7 +21,7 @@ export async function auditCss(config) {
 }
 export function selectorPresent(css, selector) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return new RegExp(`(?:^|[},\\s])${escaped}(?=[\\s,{:.#>+~[])`, "m").test(css);
+    return new RegExp(`(?:^|[},(\\s])${escaped}(?=[\\s,){:.#>+~[])`, "m").test(css);
 }
 function result(name, pass, detail) { return { name, status: pass ? "passed" : "failed", detail }; }
 export function assertChecks(checks) {

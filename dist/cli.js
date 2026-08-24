@@ -5,8 +5,8 @@ import { auditCss } from "./audit.js";
 import { loadConfig } from "./config.js";
 import { promote, rollback } from "./docker.js";
 import { loadRecord, saveRecord } from "./report.js";
-import { captureAndCompare } from "./visual.js";
-import { ensureDir, exists, pruneRuns, run } from "./utils.js";
+import { browserIdentity, captureAndCompare } from "./visual.js";
+import { ensureDir, exists, pruneRuns, run, withReleaseLock } from "./utils.js";
 const args = process.argv.slice(2);
 const configArg = option("--config") ?? "fpg.yml";
 const command = positional(args);
@@ -36,28 +36,36 @@ try {
         console.log(join(runDir, "report.html"));
     }
     else if (command[0] === "rollback") {
-        await rollback(config, command[1]);
+        await withReleaseLock(config.rootDir, await commit(), () => rollback(config, command[1]));
         console.log(`Rolled back to ${command[1]}`);
     }
     else {
         const runDir = await newRunDir(action);
-        const record = { startedAt: new Date().toISOString(), command: action, baseUrl: config.baseUrl, commit: await commit(), checks: [], visuals: [] };
+        const record = { startedAt: new Date().toISOString(), command: action, baseUrl: config.baseUrl, commit: await commit(), environment: { platform: `${process.platform} ${process.arch}`, node: process.version }, configSummary: { routes: config.routes.map((route) => route.path), viewports: config.viewports.map((viewport) => `${viewport.width}x${viewport.height}`), maxDiffPixelRatio: config.visual.maxDiffPixelRatio, pixelThreshold: config.visual.pixelThreshold }, checks: [], visuals: [] };
         try {
             if (action === "audit")
                 record.checks.push(...await auditCss(config));
-            else if (action === "capture")
+            else if (action === "capture") {
+                record.environment.browser = await browserIdentity(config);
                 merge(record, await captureAndCompare(config, runDir, { compare: false, update: false }));
-            else if (action === "compare")
-                merge(record, await captureAndCompare(config, runDir, { compare: true, update: false }));
-            else if (action === "verify") {
-                record.checks.push(...await auditCss(config));
+            }
+            else if (action === "compare") {
+                record.environment.browser = await browserIdentity(config);
                 merge(record, await captureAndCompare(config, runDir, { compare: true, update: false }));
             }
-            else if (action === "baseline update")
+            else if (action === "verify") {
+                record.checks.push(...await auditCss(config));
+                record.environment.browser = await browserIdentity(config);
+                merge(record, await captureAndCompare(config, runDir, { compare: true, update: false }));
+            }
+            else if (action === "baseline update") {
+                record.environment.browser = await browserIdentity(config);
                 merge(record, await captureAndCompare(config, runDir, { compare: false, update: true }));
+            }
             else if (action === "promote") {
                 record.checks.push(...await auditCss(config));
-                await promote(config, runDir, record);
+                record.environment.browser = await browserIdentity(config);
+                await withReleaseLock(config.rootDir, record.commit, () => promote(config, runDir, record));
             }
             else
                 throw new Error(`Unknown command: ${action}`);

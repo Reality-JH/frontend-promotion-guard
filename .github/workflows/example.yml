@@ -1,7 +1,12 @@
 name: Frontend promotion gate
+concurrency:
+  group: fpg-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 on:
   pull_request:
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   guard:
     runs-on: ubuntu-latest
@@ -11,11 +16,11 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run license:check
+      - run: npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org
       - run: npm run example:build
       - run: npm run example:serve &
       - run: for attempt in {1..30}; do curl --fail --silent http://127.0.0.1:4173 && exit 0; sleep 1; done; exit 1
-      # Replace this reference after the public repository and v0.1.0 tag exist.
-      - uses: Reality_JH/frontend-promotion-guard@v0.1.0
+      - uses: Reality_JH/frontend-promotion-guard@v0.2.0
         with:
           config: fpg.yml
           command: verify

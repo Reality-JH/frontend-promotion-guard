@@ -1,11 +1,21 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ensureDir, exists } from "./utils.js";
+import { ensureDir, exists, redact } from "./utils.js";
 export async function saveRecord(runDir, record) {
     await ensureDir(runDir);
     record.finishedAt = new Date().toISOString();
-    await writeFile(join(runDir, "run.json"), JSON.stringify(record, null, 2));
-    await writeFile(join(runDir, "report.html"), renderReport(record));
+    const safe = sanitizeRecord(record);
+    await writeFile(join(runDir, "run.json"), JSON.stringify(safe, null, 2));
+    await writeFile(join(runDir, "report.html"), renderReport(safe));
+}
+function sanitizeRecord(record) {
+    return {
+        ...record,
+        baseUrl: redact(record.baseUrl),
+        checks: record.checks.map((check) => ({ ...check, detail: redact(check.detail) })),
+        visuals: record.visuals.map((visual) => ({ ...visual, route: redact(visual.route) })),
+        configSummary: record.configSummary ? { ...record.configSummary, routes: record.configSummary.routes.map(redact) } : undefined,
+    };
 }
 export async function loadRecord(runDir) {
     const path = join(runDir, "run.json");
@@ -18,7 +28,9 @@ export function renderReport(run) {
     const failed = run.checks.filter((item) => item.status === "failed").length + run.visuals.filter((item) => item.status === "failed").length;
     const cards = run.visuals.map((item) => `<article class="visual ${item.status}"><header><strong>${esc(item.route)} · ${esc(item.viewport)}</strong><span>${(item.diffPixelRatio * 100).toFixed(3)}%</span></header><div class="shots"><figure><img src="${attr(item.baseline)}" alt="Baseline"><figcaption>Baseline</figcaption></figure><figure><img src="${attr(item.current)}" alt="Current"><figcaption>Current</figcaption></figure><figure><img src="${attr(item.diff)}" alt="Diff"><figcaption>Diff</figcaption></figure></div></article>`).join("");
     const checks = run.checks.map((item) => `<tr><td><span class="dot ${item.status}"></span>${esc(item.name)}</td><td>${esc(item.status)}</td><td>${esc(item.detail)}</td></tr>`).join("");
-    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Frontend Promotion Guard report</title><style>${styles}</style></head><body><main><p class="eyebrow">FRONTEND PROMOTION GUARD</p><h1>Release acceptance report</h1><p class="lede">Static evidence for build semantics, computed styles, screenshots, promotion, and rollback.</p><section class="summary"><div><small>Result</small><strong class="${failed ? "bad" : "good"}">${failed ? "FAILED" : "PASSED"}</strong></div><div><small>Checks</small><strong>${passed} passed · ${failed} failed</strong></div><div><small>Commit</small><strong>${esc(run.commit || "unknown")}</strong></div><div><small>Command</small><strong>${esc(run.command)}</strong></div></section><section><h2>Release identity</h2><dl><dt>Base URL</dt><dd>${esc(run.baseUrl)}</dd><dt>Candidate image</dt><dd>${esc(run.candidateImage || "n/a")}</dd><dt>Production image</dt><dd>${esc(run.productionImage || "n/a")}</dd><dt>Rollback image</dt><dd>${esc(run.rollbackImage || "n/a")}</dd><dt>Rolled back</dt><dd>${run.rolledBack ? "yes" : "no"}</dd><dt>Started</dt><dd>${esc(run.startedAt)}</dd><dt>Finished</dt><dd>${esc(run.finishedAt || "")}</dd></dl></section><section><h2>Test results</h2><div class="table"><table><thead><tr><th>Check</th><th>Status</th><th>Detail</th></tr></thead><tbody>${checks}</tbody></table></div></section><section><h2>Visual evidence</h2><div class="visuals">${cards || "<p>No visual evidence recorded.</p>"}</div></section></main></body></html>`;
+    const stages = (run.stages ?? []).map((stage) => `<tr><td>${esc(stage.name)}</td><td>${esc(stage.status)}</td><td>${esc(stage.startedAt)}</td><td>${esc(stage.finishedAt || "")}</td></tr>`).join("");
+    const config = run.configSummary;
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Frontend Promotion Guard report</title><style>${styles}</style></head><body><main><p class="eyebrow">FRONTEND PROMOTION GUARD</p><h1>Release acceptance report</h1><p class="lede">Static evidence for build semantics, computed styles, screenshots, promotion, and rollback.</p><section class="summary"><div><small>Result</small><strong class="${failed ? "bad" : "good"}">${failed ? "FAILED" : "PASSED"}</strong></div><div><small>Checks</small><strong>${passed} passed · ${failed} failed</strong></div><div><small>Final state</small><strong>${esc(run.finalState || "verification only")}</strong></div><div><small>Command</small><strong>${esc(run.command)}</strong></div></section><section><h2>Release identity</h2><dl><dt>Commit</dt><dd>${esc(run.commit || "unknown")}</dd><dt>Base URL</dt><dd>${esc(run.baseUrl)}</dd><dt>Candidate reference</dt><dd>${esc(run.candidateImage || "n/a")}</dd><dt>Candidate image ID</dt><dd>${esc(run.candidateImageId || "n/a")}</dd><dt>Production reference</dt><dd>${esc(run.productionImage || "n/a")}</dd><dt>Previous production ID</dt><dd>${esc(run.previousProductionImageId || "n/a")}</dd><dt>Final production ID</dt><dd>${esc(run.finalProductionImageId || "n/a")}</dd><dt>Rollback reference</dt><dd>${esc(run.rollbackImage || "n/a")}</dd><dt>Rolled back</dt><dd>${run.rolledBack ? "yes" : "no"}</dd><dt>Platform</dt><dd>${esc(run.environment?.platform || "unknown")}</dd><dt>Node.js</dt><dd>${esc(run.environment?.node || "unknown")}</dd><dt>Browser</dt><dd>${esc(run.environment?.browser || "n/a")}</dd><dt>Started</dt><dd>${esc(run.startedAt)}</dd><dt>Finished</dt><dd>${esc(run.finishedAt || "")}</dd></dl></section><section><h2>Configuration summary</h2><dl><dt>Routes</dt><dd>${esc(config?.routes.join(", ") || "n/a")}</dd><dt>Viewports</dt><dd>${esc(config?.viewports.join(", ") || "n/a")}</dd><dt>Maximum diff ratio</dt><dd>${config?.maxDiffPixelRatio ?? "n/a"}</dd><dt>Pixel threshold</dt><dd>${config?.pixelThreshold ?? "n/a"}</dd></dl></section>${stages ? `<section><h2>Release stages</h2><div class="table"><table><thead><tr><th>Stage</th><th>Status</th><th>Started</th><th>Finished</th></tr></thead><tbody>${stages}</tbody></table></div></section>` : ""}<section><h2>Test results</h2><div class="table"><table><thead><tr><th>Check</th><th>Status</th><th>Detail</th></tr></thead><tbody>${checks}</tbody></table></div></section><section><h2>Visual evidence</h2><div class="visuals">${cards || "<p>No visual evidence recorded.</p>"}</div></section></main></body></html>`;
 }
 const esc = (value) => value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const attr = esc;

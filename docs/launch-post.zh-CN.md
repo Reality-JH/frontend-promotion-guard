@@ -79,7 +79,7 @@ node dist/cli.js verify --config fpg.example.yml
 仓库包含可运行的 Vite/React 工作流和跨平台矩阵。最小接入是：
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.1.1
+- uses: Reality_JH/frontend-promotion-guard@v0.2.0
   with:
     config: fpg.yml
     command: verify
