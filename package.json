@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "test": "node --test --test-concurrency=1 test/action.test.mjs test/audit.test.mjs test/cli.test.mjs test/config.test.mjs test/report.test.mjs test/visual.test.mjs",
     "test:docker": "node scripts/docker-integration.mjs",
     "license:check": "node scripts/check-licenses.mjs",
     "example:build": "vite build --config examples/vite-react/vite.config.ts",
