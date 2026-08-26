@@ -1,12 +1,24 @@
 # Frontend Promotion Guard
 
-中文是本项目的翻译入口。[English](./README.md) · [中文发布文章](./docs/launch-post.zh-CN.md) · [English launch article](./docs/launch-post.md)
+中文是本项目的翻译入口。[English](./README.md) · [v0.3.0 更新说明](./docs/v0.3.0-release.zh-CN.md) · [中文发布文章](./docs/launch-post.zh-CN.md)
 
 Frontend Promotion Guard（FPG）是一道独立的前端发布门禁。它针对一种常见事故：构建成功、HTTP 返回 200、容器健康，但线上 CSS 已丢失、布局损坏或页面视觉退化。
 
 FPG 在晋升正式镜像前依次检查构建后 CSS 语义、浏览器真实计算样式和多路由多宽度截图；候选容器通过后才晋升，正式环境复验失败则恢复上一镜像。每次运行都会生成可直接打开的静态 HTML 报告。
 
 它不替代功能测试、安全测试和人工验收。视觉基线必须由人确认页面正确后显式更新。
+
+## 按当前事项选择最小门禁
+
+FPG 不是每次前端改动后的强制部署步骤。应按当前目标选择层级：
+
+| 层级 | 何时执行 | 命令与边界 |
+| --- | --- | --- |
+| 单项检查 | 单个功能或缺陷仍在开发 | 先运行项目自身的定向测试。只有风险位于构建后 CSS 时才运行 `fpg audit`；它不会启动浏览器、构建镜像、重启服务或检查无关路由。 |
+| 模块门禁 | 一组相关事项已在运行中的目标上收口 | 对配置的路由和视口运行 `fpg verify`；它只观察现有目标，不构建镜像、不重启服务、不晋升版本。 |
+| 发布门禁 | 已明确要求部署或发布、必须在已部署环境验收，或已经到达约定的批次发布节点 | 运行 `fpg promote`；它会构建或启动候选环境，通过验收后改变容器状态，并在正式环境复验失败时尝试回退。 |
+
+FPG 报告通过只证明配置中的发布检查通过，不能证明当前功能的业务闭环已经完成。应先完成定向业务验证，再升级到更宽的门禁；共享门禁按约定批次执行一次，不要为每个清单项重复执行。
 
 ## 它要拦住的事故
 
@@ -83,7 +95,7 @@ fpg report
 ## GitHub Actions 最小接入
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.2.0
+- uses: Reality_JH/frontend-promotion-guard@v0.3.0
   with:
     config: fpg.yml
     command: verify
@@ -95,6 +107,8 @@ fpg report
 ```
 
 调用前需要完成项目构建、启动待测服务，并确保 runner 有 Chrome。可执行的 Vite/React 启动流程见 [`.github/workflows/example.yml`](./.github/workflows/example.yml)，跨平台矩阵见 [`.github/workflows/matrix.yml`](./.github/workflows/matrix.yml)。发布版 Action 必须包含构建后的 `dist/`、`package.json` 和 `package-lock.json`。
+
+Action 默认执行不会改变容器状态的 `verify`。只有明确的发布工作流使用 `command: promote` 时，才同时设置 `confirm-promotion: true`；普通 Pull Request 和功能开发工作流不应设置该开关。
 
 ## 维护者与联系
 

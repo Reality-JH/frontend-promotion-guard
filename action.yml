@@ -9,6 +9,10 @@ inputs:
     description: FPG command (audit, verify, capture, compare, promote, report).
     required: false
     default: verify
+  confirm-promotion:
+    description: Must be true when command is promote. Prevents ordinary checks from mutating production state.
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
@@ -20,10 +24,18 @@ runs:
       env:
         FPG_ACTION_COMMAND: ${{ inputs.command }}
         FPG_ACTION_CONFIG: ${{ inputs.config }}
+        FPG_CONFIRM_PROMOTION: ${{ inputs['confirm-promotion'] }}
       run: |
         case "$FPG_ACTION_COMMAND" in
-          audit|capture|compare|verify|promote|report)
+          audit|capture|compare|verify|report)
             node "${{ github.action_path }}/dist/cli.js" "$FPG_ACTION_COMMAND" --config "$FPG_ACTION_CONFIG"
+            ;;
+          promote)
+            if [ "$FPG_CONFIRM_PROMOTION" != "true" ]; then
+              echo "Promotion requires confirm-promotion: true" >&2
+              exit 2
+            fi
+            node "${{ github.action_path }}/dist/cli.js" promote --config "$FPG_ACTION_CONFIG"
             ;;
           *)
             echo "Unsupported Frontend Promotion Guard Action command: $FPG_ACTION_COMMAND" >&2

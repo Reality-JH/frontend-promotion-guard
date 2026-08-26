@@ -1,12 +1,24 @@
 # Frontend Promotion Guard
 
-English is the default project language. [简体中文](./README.zh-CN.md) · [Launch article](./docs/launch-post.md) · [中文文章](./docs/launch-post.zh-CN.md)
+English is the default project language. [简体中文](./README.zh-CN.md) · [v0.3.0 notes](./docs/v0.3.0-release.md) · [Launch article](./docs/launch-post.md)
 
 Frontend Promotion Guard (FPG) is a reusable release gate for failures that ordinary health checks miss: the build succeeds, HTTP returns 200, and the container is healthy, while production CSS or layout is broken.
 
 FPG audits emitted CSS, evaluates real browser-computed styles, compares screenshots across routes and viewports, accepts an isolated candidate container, promotes only after acceptance, and restores the previous image when production re-verification fails. Every run produces a static HTML evidence report.
 
 FPG does not replace functional testing, security testing, or human acceptance. A human must confirm a correct page before explicitly updating visual baselines.
+
+## Use the smallest gate that matches the work
+
+FPG is not a mandatory deployment step after every frontend edit. Choose the level by the current objective:
+
+| Level | When to run | Command and boundary |
+| --- | --- | --- |
+| Targeted check | One feature or defect is still being implemented | Use the project's focused test first. Run `fpg audit` only when emitted CSS is the risk. It does not start browsers, build images, restart services, or inspect unrelated routes. |
+| Module gate | A related batch is ready on an already running target | Run `fpg verify` for the configured routes and viewports. It observes the target but does not build images, restart services, or promote a release. |
+| Release gate | A deployment or release was explicitly requested, the deployed environment is required for acceptance, or an agreed release checkpoint was reached | Run `fpg promote`. This command builds or starts the candidate, mutates container state after acceptance, re-verifies production, and may roll back. |
+
+A passing FPG report proves only the configured release checks. It does not prove that the feature's business behavior is complete. Finish the targeted business flow before escalating to a broader gate, and run a shared gate once per agreed batch rather than once per checklist item.
 
 ## The failure this is meant to catch
 
@@ -52,7 +64,7 @@ Configuration is validated before a browser or Docker operation starts. Set `doc
 ## GitHub Actions
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.2.0
+- uses: Reality_JH/frontend-promotion-guard@v0.3.0
   with:
     config: fpg.yml
     command: verify
@@ -64,6 +76,8 @@ Configuration is validated before a browser or Docker operation starts. Set `doc
 ```
 
 Build and start the target before this step. See [`.github/workflows/example.yml`](./.github/workflows/example.yml) for a runnable Vite/React example and [`.github/workflows/matrix.yml`](./.github/workflows/matrix.yml) for the cross-platform matrix.
+
+The Action defaults to the non-mutating `verify` command. A release workflow that intentionally uses `command: promote` must also set `confirm-promotion: true`; ordinary pull-request and feature workflows should not set it.
 
 ## Maintainer and contact
 

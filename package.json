@@ -1,6 +1,6 @@
 {
   "name": "frontend-promotion-guard",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Release gate for CSS integrity, computed styles, visual regression, and candidate-gated Docker promotion.",
   "type": "module",
   "bin": {

@@ -20,7 +20,7 @@ jobs:
       - run: npm run example:build
       - run: npm run example:serve &
       - run: for attempt in {1..30}; do curl --fail --silent http://127.0.0.1:4173 && exit 0; sleep 1; done; exit 1
-      - uses: Reality_JH/frontend-promotion-guard@v0.2.0
+      - uses: Reality_JH/frontend-promotion-guard@v0.3.0
         with:
           config: fpg.yml
           command: verify
