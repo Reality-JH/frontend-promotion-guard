@@ -1,5 +1,7 @@
 # Frontend Promotion Guard
 
+[![CI](https://github.com/Reality-JH/frontend-promotion-guard/actions/workflows/matrix.yml/badge.svg)](https://github.com/Reality-JH/frontend-promotion-guard/actions/workflows/matrix.yml) [![Tag](https://img.shields.io/github/v/tag/Reality-JH/frontend-promotion-guard)](https://github.com/Reality-JH/frontend-promotion-guard/tags) [![License](https://img.shields.io/github/license/Reality-JH/frontend-promotion-guard)](./LICENSE)
+
 中文是本项目的翻译入口。[English](./README.md) · [v0.3.0 更新说明](./docs/v0.3.0-release.zh-CN.md) · [中文发布文章](./docs/launch-post.zh-CN.md)
 
 Frontend Promotion Guard（FPG）是一道独立的前端发布门禁。它针对一种常见事故：构建成功、HTTP 返回 200、容器健康，但线上 CSS 已丢失、布局损坏或页面视觉退化。

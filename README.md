@@ -1,5 +1,7 @@
 # Frontend Promotion Guard
 
+[![CI](https://github.com/Reality-JH/frontend-promotion-guard/actions/workflows/matrix.yml/badge.svg)](https://github.com/Reality-JH/frontend-promotion-guard/actions/workflows/matrix.yml) [![Tag](https://img.shields.io/github/v/tag/Reality-JH/frontend-promotion-guard)](https://github.com/Reality-JH/frontend-promotion-guard/tags) [![License](https://img.shields.io/github/license/Reality-JH/frontend-promotion-guard)](./LICENSE)
+
 English is the default project language. [简体中文](./README.zh-CN.md) · [v0.3.0 notes](./docs/v0.3.0-release.md) · [Launch article](./docs/launch-post.md)
 
 Frontend Promotion Guard (FPG) is a reusable release gate for failures that ordinary health checks miss: the build succeeds, HTTP returns 200, and the container is healthy, while production CSS or layout is broken.
