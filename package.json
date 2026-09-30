@@ -2,6 +2,20 @@
   "name": "frontend-promotion-guard",
   "version": "0.3.0",
   "description": "Release gate for CSS integrity, computed styles, visual regression, and candidate-gated Docker promotion.",
+  "keywords": [
+    "visual-regression",
+    "release-gate",
+    "screenshot-testing",
+    "computed-style",
+    "css-audit",
+    "deployment-verification",
+    "docker-promotion",
+    "rollback",
+    "pixelmatch",
+    "playwright-core",
+    "ci-cd",
+    "frontend"
+  ],
   "type": "module",
   "bin": {
     "fpg": "dist/cli.js"

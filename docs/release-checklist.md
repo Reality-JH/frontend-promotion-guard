@@ -26,6 +26,6 @@ This checklist records the release evidence required for v0.3.0.
 1. Run the full local verification suite.
 2. Push `main` and confirm the cross-platform and Docker integration jobs pass.
 3. Create tag `v0.3.0` from the verified commit.
-4. Confirm `Reality_JH/frontend-promotion-guard@v0.3.0` resolves.
+4. Confirm `Reality-JH/frontend-promotion-guard@v0.3.0` resolves.
 5. Open the uploaded failed-run evidence report and confirm the final image ID and rollback state.
 6. Publish the bilingual release notes from `docs/v0.3.0-release.md` and `docs/v0.3.0-release.zh-CN.md`.

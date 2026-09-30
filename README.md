@@ -49,11 +49,44 @@ PowerShell:
 .\scripts\fpg.ps1 verify --config .\fpg.yml
 ```
 
-Set `browserPath` or `FPG_BROWSER_PATH` to override system browser discovery. Relative paths resolve from the YAML file. Routes, selectors, viewports, thresholds, evidence and baseline directories, retention, image names, ports, container names, and Docker arguments are configurable; see [`fpg.example.yml`](./fpg.example.yml).
+Set `browserPath` or `FPG_BROWSER_PATH` to override system browser discovery. FPG uses `playwright-core` and never downloads a browser.
+
+## Configuration
+
+The complete minimal example is [`fpg.example.yml`](./fpg.example.yml). All fields are configurable:
+
+- `routes`: route name, path, and the ready selector that marks the page usable.
+- `viewports`: screenshot width and height pairs.
+- `cssAudit`: CSS file globs, forbidden source directives, and required selectors.
+- `computedStyles`: selector, CSS property, and exactly one of `equals` or `notEquals`.
+- `visual`: pixel thresholds, baseline directory, evidence directory, and run retention.
+- `docker`: candidate and production images, containers, ports, build context, Dockerfile, extra arguments, health path, and the rollback switch.
+
+Relative paths resolve from the YAML file location. Both Windows `\` and Linux `/` CSS glob separators are accepted. Point evidence and baseline directories at a disk with room for PNG output.
 
 ## Commands
 
-`audit`, `capture`, `compare`, `verify`, `baseline update`, `promote`, `rollback IMAGE`, and `report` are available. Only `baseline update` writes baselines. A failed test never replaces them.
+```text
+fpg audit
+fpg capture
+fpg compare
+fpg verify
+fpg baseline update
+fpg promote
+fpg rollback IMAGE
+fpg report
+```
+
+- `audit`: emitted-CSS checks only.
+- `capture`: collects current screenshots and computed styles without touching baselines.
+- `compare`: computed-style and screenshot regression; a missing baseline fails.
+- `verify`: `audit + compare`.
+- `baseline update`: the only command allowed to write baselines; must run explicitly.
+- `promote`: starts the candidate on an isolated port, accepts it, then promotes; failed production re-verification rolls back automatically.
+- `rollback IMAGE`: restores an explicit immutable image.
+- `report`: regenerates the HTML report for the most recent run.
+
+Only `baseline update` writes baselines. A failed test never replaces them.
 
 The HTML report includes baseline, current, and diff images, immutable image IDs, Git commit, runtime and browser versions, stage timings, test results, final production state, and rollback state. External commands are spawned with argument arrays rather than shell strings. Common Cookie, Authorization, token, API key, password, and secret patterns are redacted from command output; configuration files must still contain no secrets.
 
@@ -64,7 +97,7 @@ Configuration is validated before a browser or Docker operation starts. Set `doc
 ## GitHub Actions
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.3.0
+- uses: Reality-JH/frontend-promotion-guard@v0.3.0
   with:
     config: fpg.yml
     command: verify
@@ -79,9 +112,20 @@ Build and start the target before this step. See [`.github/workflows/example.yml
 
 The Action defaults to the non-mutating `verify` command. A release workflow that intentionally uses `command: promote` must also set `confirm-promotion: true`; ordinary pull-request and feature workflows should not set it.
 
+## Frequently asked questions
+
+**The build passed and the health check is green, but the deployed page is unstyled. What catches that?**
+This is the exact failure FPG exists for. `verify` opens the served page in real Chrome or Edge and asserts computed styles: in the repository's broken-CSS demo the page returns HTTP 200 with an empty stylesheet, the pixel diff stays under the configured 12 percent ceiling at 5.537 percent, and the computed-style assertion still fails the run because `.status-grid` computes `block` instead of `grid`. `audit` catches the sibling failure where the emitted CSS itself never compiled.
+
+**How is this different from Percy, Chromatic, BackstopJS, or Playwright screenshot tests?**
+Those tools cover visual review or give you a framework to build gates on. FPG is a self-contained release gate: it adds emitted-CSS audits, computed-style assertions, overflow and console checks, Docker candidate promotion with a verified rollback path, and a static HTML evidence report. It runs on your own runner with a system browser and keeps evidence as local files. No SaaS dashboard is required.
+
+**Does it replace functional or end-to-end tests?**
+No. FPG verifies that the delivered page still renders like the approved baseline. It does not click through business flows, and it is not a substitute for feature tests, security tests, accessibility review, or human acceptance of new pages.
+
 ## Maintainer and contact
 
-Maintainer: `Reality_JH`. Use repository Issues for ordinary questions. Report security issues to `849034843@qq.com`; do not include credentials, cookies, tokens, or business data in public issues.
+Maintainer: `Reality-JH`. Use repository Issues for ordinary questions. Report security issues to `849034843@qq.com`; do not include credentials, cookies, tokens, or business data in public issues.
 
 ## Continuous license scanning
 
@@ -98,6 +142,10 @@ Every push and pull request scans production dependency licenses and runs the np
 ## Baseline review
 
 `baseline update` writes `visual-baselines/manifest.json` with a SHA-256 digest for every approved image. The GitHub Action intentionally does not allow baseline updates. Update baselines locally, review the old image, current image, and diff, then commit image and manifest changes through a pull request. Pin the runner OS, browser major version, and fonts when pixel stability matters.
+
+## Docker promotion model
+
+`promote` records the running production container's image ID and tags it as a timestamped rollback image. It optionally builds the candidate image, runs the full acceptance checks against the candidate on an isolated port, then tags the candidate as production, rebuilds the production container, and runs the same checks again. When production re-verification fails, FPG rebuilds production from the retained image and verifies the restore before reporting `restored`.
 
 ## Development
 
