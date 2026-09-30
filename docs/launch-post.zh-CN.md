@@ -38,6 +38,10 @@ FPG 是一个 TypeScript CLI，要求 Node.js 20+ 和系统 Chrome 或 Edge；Do
 
 ## 一次运行产出什么
 
+一个终端讲完整个故事：`verify` 在健康站点上通过，同一条命令在返回 HTTP 200 但样式表是空壳的服务上失败。
+
+![verify 先在健康示例站通过，随后在故障服务上因计算样式断言失败](./assets/fpg-verify-demo.svg)
+
 每条命令都会在 `release-evidence` 下写一个运行目录，包含 `run.json` 和自包含的 `report.html`：git commit、base URL、浏览器版本、平台、Node 版本、每条检查的状态与明细、每组截图三联图及其差异率，晋升运行还包含镜像 ID、各阶段耗时和最终生产状态。报告会遮盖 Cookie、Authorization、token 一类的凭据特征。
 
 对内置 Vite/React 示例跑一次真实的 `verify`（2 条路由 × 4 个视口，系统 Chrome 报告 `chromium 154.0.8037.58`）：

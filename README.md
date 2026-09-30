@@ -10,6 +10,8 @@ FPG audits emitted CSS, evaluates real browser-computed styles, compares screens
 
 FPG does not replace functional testing, security testing, or human acceptance. A human must confirm a correct page before explicitly updating visual baselines.
 
+![A verify run passes on the healthy demo site, then the same command fails against a server that returns HTTP 200 with an empty stylesheet](./docs/assets/fpg-verify-demo.svg)
+
 ## Use the smallest gate that matches the work
 
 FPG is not a mandatory deployment step after every frontend edit. Choose the level by the current objective:

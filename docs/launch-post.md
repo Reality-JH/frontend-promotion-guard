@@ -38,6 +38,10 @@ Just as important is what the tool does not do. It does not replace feature test
 
 ## What a run produces
 
+The whole arc in one terminal: `verify` passes on the healthy site, the same command fails against a server answering HTTP 200 with a stub stylesheet.
+
+![A verify run passes on the healthy demo site, then fails against the broken server with a computed-style error](./assets/fpg-verify-demo.svg)
+
 Every command writes a run directory under `release-evidence` containing `run.json` and a self-contained `report.html`: the git commit, base URL, browser version, platform, Node version, every check with its status and detail, every screenshot triptych with its diff ratio, and for promotions the image IDs, stage timings, and final production state. Cookie, Authorization, token, and similar credential patterns are redacted from the report.
 
 A real `verify` run against the bundled Vite/React example (2 routes at 4 viewports, system Chrome reporting `chromium 154.0.8037.58`):
