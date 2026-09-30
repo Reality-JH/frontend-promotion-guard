@@ -50,3 +50,18 @@ docker:
   # Require a digest or image ID when promoting an existing candidate or rolling back.
   # A candidate built by FPG is resolved to its image ID automatically.
   requireImmutableImage: false
+
+# Continuous post-deploy monitoring. Reuses the compare pipeline (computed
+# styles, overflow, console errors, screenshot diff) against the same
+# baselines; cssAudit is skipped because production has no build artifacts.
+monitor:
+  interval: 5m          # delay between rounds; accepts ms, s, m, h
+  failureThreshold: 2   # consecutive failed rounds before a down alert
+  recoveryNotify: true  # send a recovered event when checks pass again
+  stateFile: ./monitor-state.json
+  # baseUrl: https://prod.example.com  # optional; overrides top-level baseUrl for monitor only
+  webhook:
+    url: https://hooks.example.com/fpg-monitor
+    headers:
+      Authorization: Bearer replace-me
+    timeoutMs: 10000

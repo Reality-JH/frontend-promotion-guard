@@ -73,6 +73,7 @@ export async function loadConfig(path = "fpg.yml") {
         throw new Error("docker.candidateImage and docker.productionImage must be different");
     if (docker && !docker.healthPath.startsWith("/"))
         throw new Error("docker.healthPath must start with /");
+    const monitor = raw.monitor === undefined ? undefined : parseMonitor(object(raw.monitor, "monitor"), rootDir);
     const ratio = ratioValue(visual.maxDiffPixelRatio ?? 0.12, "visual.maxDiffPixelRatio");
     const pixelThreshold = ratioValue(visual.pixelThreshold ?? 0.2, "visual.pixelThreshold");
     const retention = nonNegativeInteger(visual.retention ?? 10, "visual.retention");
@@ -107,7 +108,54 @@ export async function loadConfig(path = "fpg.yml") {
             retention,
         },
         docker,
+        monitor,
     };
+}
+function parseMonitor(raw, rootDir) {
+    const interval = nonEmptyString(raw.interval ?? "5m", "monitor.interval");
+    const webhookRaw = raw.webhook === undefined ? undefined : object(raw.webhook, "monitor.webhook");
+    const headers = {};
+    if (webhookRaw?.headers !== undefined)
+        for (const [key, value] of Object.entries(object(webhookRaw.headers, "monitor.webhook.headers"))) {
+            if (typeof value !== "string")
+                throw new Error("monitor.webhook.headers must map strings to strings");
+            headers[key] = value;
+        }
+    return {
+        interval,
+        intervalMs: durationMs(interval, "monitor.interval"),
+        failureThreshold: positiveInteger(raw.failureThreshold ?? 2, "monitor.failureThreshold"),
+        recoveryNotify: booleanValue(raw.recoveryNotify ?? true, "monitor.recoveryNotify"),
+        webhook: webhookRaw ? {
+            url: httpUrl(webhookRaw.url, "monitor.webhook.url"),
+            headers,
+            timeoutMs: positiveInteger(webhookRaw.timeoutMs ?? 10_000, "monitor.webhook.timeoutMs"),
+        } : undefined,
+        stateFile: resolve(rootDir, nonEmptyString(raw.stateFile ?? "monitor-state.json", "monitor.stateFile")),
+        baseUrl: raw.baseUrl === undefined ? undefined : httpUrl(raw.baseUrl, "monitor.baseUrl"),
+    };
+}
+function durationMs(value, name) {
+    const match = /^(\d+(?:\.\d+)?)(ms|s|m|h)$/.exec(value.trim());
+    if (!match)
+        throw new Error(`${name} must be a duration such as 30s, 5m, or 1h`);
+    const ms = Number(match[1]) * { ms: 1, s: 1_000, m: 60_000, h: 3_600_000 }[match[2]];
+    if (!Number.isFinite(ms) || ms <= 0)
+        throw new Error(`${name} must be a positive duration`);
+    return ms;
+}
+function httpUrl(value, name) {
+    const url = nonEmptyString(value, name).replace(/\/$/, "");
+    let parsed;
+    try {
+        parsed = new URL(url);
+    }
+    catch {
+        throw new Error(`${name} must be an http or https URL`);
+    }
+    if (!["http:", "https:"].includes(parsed.protocol))
+        throw new Error(`${name} must be an http or https URL`);
+    return url;
 }
 function object(value, name) {
     if (!value || typeof value !== "object" || Array.isArray(value))

@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import { auditCss } from "./audit.js";
 import { loadConfig } from "./config.js";
 import { promote, rollback } from "./docker.js";
+import { runMonitor } from "./monitor.js";
 import { loadRecord, saveRecord } from "./report.js";
 import type { RunRecord } from "./types.js";
 import { browserIdentity, captureAndCompare } from "./visual.js";
@@ -24,7 +25,8 @@ Usage:
   fpg baseline update [--config fpg.yml] [--base-url URL]
   fpg promote [--config fpg.yml]
   fpg rollback IMAGE [--config fpg.yml]
-  fpg report [--config fpg.yml]`);
+  fpg report [--config fpg.yml]
+  fpg monitor [--config fpg.yml] [--base-url URL] [--once]`);
   process.exit(0);
 }
 
@@ -41,6 +43,8 @@ try {
   } else if (command[0] === "rollback") {
     await withReleaseLock(config.rootDir, await commit(), () => rollback(config, command[1]));
     console.log(`Rolled back to ${command[1]}`);
+  } else if (action === "monitor") {
+    await runMonitor(config, { once: args.includes("--once"), baseUrl: option("--base-url") });
   } else {
     const runDir = await newRunDir(action);
     const record: RunRecord = { startedAt: new Date().toISOString(), command: action, baseUrl: config.baseUrl, commit: await commit(), environment: { platform: `${process.platform} ${process.arch}`, node: process.version }, configSummary: { routes: config.routes.map((route) => route.path), viewports: config.viewports.map((viewport) => `${viewport.width}x${viewport.height}`), maxDiffPixelRatio: config.visual.maxDiffPixelRatio, pixelThreshold: config.visual.pixelThreshold }, checks: [], visuals: [] };

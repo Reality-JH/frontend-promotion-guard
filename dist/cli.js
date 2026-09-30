@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import { auditCss } from "./audit.js";
 import { loadConfig } from "./config.js";
 import { promote, rollback } from "./docker.js";
+import { runMonitor } from "./monitor.js";
 import { loadRecord, saveRecord } from "./report.js";
 import { browserIdentity, captureAndCompare } from "./visual.js";
 import { ensureDir, exists, pruneRuns, run, withReleaseLock } from "./utils.js";
@@ -21,7 +22,8 @@ Usage:
   fpg baseline update [--config fpg.yml] [--base-url URL]
   fpg promote [--config fpg.yml]
   fpg rollback IMAGE [--config fpg.yml]
-  fpg report [--config fpg.yml]`);
+  fpg report [--config fpg.yml]
+  fpg monitor [--config fpg.yml] [--base-url URL] [--once]`);
     process.exit(0);
 }
 const config = await loadConfig(configArg);
@@ -38,6 +40,9 @@ try {
     else if (command[0] === "rollback") {
         await withReleaseLock(config.rootDir, await commit(), () => rollback(config, command[1]));
         console.log(`Rolled back to ${command[1]}`);
+    }
+    else if (action === "monitor") {
+        await runMonitor(config, { once: args.includes("--once"), baseUrl: option("--base-url") });
     }
     else {
         const runDir = await newRunDir(action);

@@ -29,6 +29,20 @@ export type DockerConfig = {
     rollback: boolean;
     requireImmutableImage: boolean;
 };
+export type MonitorWebhook = {
+    url: string;
+    headers: Record<string, string>;
+    timeoutMs: number;
+};
+export type MonitorConfig = {
+    interval: string;
+    intervalMs: number;
+    failureThreshold: number;
+    recoveryNotify: boolean;
+    webhook?: MonitorWebhook;
+    stateFile: string;
+    baseUrl?: string;
+};
 export type FpgConfig = {
     configPath: string;
     rootDir: string;
@@ -50,6 +64,7 @@ export type FpgConfig = {
         retention: number;
     };
     docker?: DockerConfig;
+    monitor?: MonitorConfig;
 };
 export type CheckResult = {
     name: string;
