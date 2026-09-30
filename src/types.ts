@@ -1,6 +1,7 @@
 export type RouteConfig = { name: string; path: string; readySelector: string };
 export type ViewportConfig = { width: number; height: number };
 export type StyleAssertion = { selector: string; property: string; equals?: string; notEquals?: string };
+export type RemoteSyncCommand = { command: string; args: string[] };
 
 export type DockerConfig = {
   candidateImage: string;
@@ -28,7 +29,7 @@ export type FpgConfig = {
   viewports: ViewportConfig[];
   cssAudit: { files: string[]; forbiddenTokens: string[]; requiredSelectors: string[] };
   computedStyles: StyleAssertion[];
-  visual: { maxDiffPixelRatio: number; pixelThreshold: number; baselineDir: string; evidenceDir: string; retention: number };
+  visual: { maxDiffPixelRatio: number; pixelThreshold: number; baselineDir: string; evidenceDir: string; retention: number; remoteSync?: { pull?: RemoteSyncCommand; push?: RemoteSyncCommand } };
   docker?: DockerConfig;
 };
 

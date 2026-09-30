@@ -76,6 +76,7 @@ export async function loadConfig(path = "fpg.yml") {
     const ratio = ratioValue(visual.maxDiffPixelRatio ?? 0.12, "visual.maxDiffPixelRatio");
     const pixelThreshold = ratioValue(visual.pixelThreshold ?? 0.2, "visual.pixelThreshold");
     const retention = nonNegativeInteger(visual.retention ?? 10, "visual.retention");
+    const remoteSyncRaw = visual.remoteSync === undefined ? undefined : object(visual.remoteSync, "visual.remoteSync");
     const baseUrl = nonEmptyString(raw.baseUrl ?? "http://127.0.0.1:3100", "baseUrl").replace(/\/$/, "");
     let parsedUrl;
     try {
@@ -105,6 +106,7 @@ export async function loadConfig(path = "fpg.yml") {
             baselineDir: resolve(rootDir, nonEmptyString(visual.baselineDir ?? "visual-baselines", "visual.baselineDir")),
             evidenceDir: resolve(rootDir, nonEmptyString(visual.evidenceDir ?? "release-evidence", "visual.evidenceDir")),
             retention,
+            remoteSync: remoteSyncRaw ? { pull: syncCommand(remoteSyncRaw.pull, "visual.remoteSync.pull"), push: syncCommand(remoteSyncRaw.push, "visual.remoteSync.push") } : undefined,
         },
         docker,
     };
@@ -144,6 +146,12 @@ function booleanValue(value, name) {
     if (typeof value !== "boolean")
         throw new Error(`${name} must be a boolean`);
     return value;
+}
+function syncCommand(value, name) {
+    if (value === undefined)
+        return undefined;
+    const item = object(value, name);
+    return { command: nonEmptyString(item.command, `${name}.command`), args: strings(item.args) };
 }
 function strings(value) {
     if (value === undefined)

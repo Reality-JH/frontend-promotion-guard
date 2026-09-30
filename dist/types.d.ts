@@ -13,6 +13,10 @@ export type StyleAssertion = {
     equals?: string;
     notEquals?: string;
 };
+export type RemoteSyncCommand = {
+    command: string;
+    args: string[];
+};
 export type DockerConfig = {
     candidateImage: string;
     productionImage: string;
@@ -48,6 +52,10 @@ export type FpgConfig = {
         baselineDir: string;
         evidenceDir: string;
         retention: number;
+        remoteSync?: {
+            pull?: RemoteSyncCommand;
+            push?: RemoteSyncCommand;
+        };
     };
     docker?: DockerConfig;
 };
