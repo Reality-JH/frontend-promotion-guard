@@ -1,4 +1,4 @@
-export type RouteConfig = { name: string; path: string; readySelector: string };
+export type RouteConfig = { name: string; path: string; readySelector: string; waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit"; fullPage?: boolean };
 export type ViewportConfig = { width: number; height: number };
 export type StyleAssertion = { selector: string; property: string; equals?: string; notEquals?: string };
 
@@ -28,12 +28,12 @@ export type FpgConfig = {
   viewports: ViewportConfig[];
   cssAudit: { files: string[]; forbiddenTokens: string[]; requiredSelectors: string[] };
   computedStyles: StyleAssertion[];
-  visual: { maxDiffPixelRatio: number; pixelThreshold: number; baselineDir: string; evidenceDir: string; retention: number };
+  visual: { maxDiffPixelRatio: number; pixelThreshold: number; baselineDir: string; evidenceDir: string; retention: number; maskSelectors?: string[]; freezeTime?: string; ariaSnapshot?: boolean; ariaSnapshotMode?: "warn" | "fail"; fullPage?: boolean };
   docker?: DockerConfig;
 };
 
 export type CheckResult = { name: string; status: "passed" | "failed"; detail: string };
-export type VisualResult = { route: string; viewport: string; baseline: string; current: string; diff: string; diffPixelRatio: number; status: "passed" | "failed" };
+export type VisualResult = { route: string; viewport: string; baseline: string; current: string; diff: string; diffPixelRatio: number; status: "passed" | "failed"; ariaStatus?: "passed" | "warn" | "failed"; ariaDiff?: string; ariaDiffText?: string };
 export type RunRecord = {
   startedAt: string;
   finishedAt?: string;
