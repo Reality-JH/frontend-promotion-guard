@@ -1,7 +1,21 @@
 {
   "name": "frontend-promotion-guard",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Release gate for CSS integrity, computed styles, visual regression, and candidate-gated Docker promotion.",
+  "keywords": [
+    "visual-regression",
+    "release-gate",
+    "ci-cd",
+    "docker",
+    "playwright",
+    "frontend"
+  ],
+  "homepage": "https://github.com/Reality-JH/frontend-promotion-guard#readme",
+  "bugs": "https://github.com/Reality-JH/frontend-promotion-guard/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Reality-JH/frontend-promotion-guard.git"
+  },
   "type": "module",
   "bin": {
     "fpg": "dist/cli.js"
@@ -12,8 +26,13 @@
     "fpg.example.yml",
     "LICENSE",
     "README.md",
-    "README.zh-CN.md"
+    "README.zh-CN.md",
+    "CHANGELOG.md"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
