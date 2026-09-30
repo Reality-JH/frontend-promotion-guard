@@ -79,7 +79,7 @@ node dist/cli.js verify --config fpg.example.yml
 仓库包含可运行的 Vite/React 工作流和跨平台矩阵。最小接入是：
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.2.0
+- uses: Reality-JH/frontend-promotion-guard@v0.2.0
   with:
     config: fpg.yml
     command: verify
@@ -93,4 +93,4 @@ Frontend Promotion Guard 不承诺页面一定正确。它拒绝只凭构建结�
 
 如果你的团队曾经因为“技术上健康、视觉上损坏”的发布被叫醒，这就是它要补上的缺口。
 
-维护者：Reality_JH。安全问题：`849034843@qq.com`。
+维护者：Reality-JH。安全问题：`849034843@qq.com`。

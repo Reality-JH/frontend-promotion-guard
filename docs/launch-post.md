@@ -79,7 +79,7 @@ That keeps the useful part of frontend release work visible to people who spend 
 The repository includes a runnable Vite/React workflow and a cross-platform matrix. The smallest integration is:
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.2.0
+- uses: Reality-JH/frontend-promotion-guard@v0.2.0
   with:
     config: fpg.yml
     command: verify
@@ -93,4 +93,4 @@ Frontend Promotion Guard is not a promise that a page is correct. It is a refusa
 
 If your team has been paged because a release was technically healthy but visibly broken, this is the gap it is meant to close.
 
-Maintainer: Reality_JH. Security reports: `849034843@qq.com`.
+Maintainer: Reality-JH. Security reports: `849034843@qq.com`.

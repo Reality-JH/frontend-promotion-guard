@@ -64,7 +64,7 @@ Configuration is validated before a browser or Docker operation starts. Set `doc
 ## GitHub Actions
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.3.0
+- uses: Reality-JH/frontend-promotion-guard@v0.3.0
   with:
     config: fpg.yml
     command: verify
@@ -81,7 +81,7 @@ The Action defaults to the non-mutating `verify` command. A release workflow tha
 
 ## Maintainer and contact
 
-Maintainer: `Reality_JH`. Use repository Issues for ordinary questions. Report security issues to `849034843@qq.com`; do not include credentials, cookies, tokens, or business data in public issues.
+Maintainer: `Reality-JH`. Use repository Issues for ordinary questions. Report security issues to `849034843@qq.com`; do not include credentials, cookies, tokens, or business data in public issues.
 
 ## Continuous license scanning
 

@@ -25,7 +25,7 @@ FPG is intentionally narrow. It does not replace functional testing, security te
 
 Repository: https://github.com/Reality-JH/frontend-promotion-guard
 
-Maintainer: Reality_JH
+Maintainer: Reality-JH
 
 Security contact: 849034843@qq.com
 

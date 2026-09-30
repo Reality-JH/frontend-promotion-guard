@@ -95,7 +95,7 @@ fpg report
 ## GitHub Actions 最小接入
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.3.0
+- uses: Reality-JH/frontend-promotion-guard@v0.3.0
   with:
     config: fpg.yml
     command: verify
@@ -112,7 +112,7 @@ Action 默认执行不会改变容器状态的 `verify`。只有明确的发布�
 
 ## 维护者与联系
 
-维护者：`Reality_JH`。普通问题通过仓库 Issues 联系；安全问题发送至 `849034843@qq.com`，不要在公开 Issue 中粘贴凭据、Cookie、Token 或业务数据。
+维护者：`Reality-JH`。普通问题通过仓库 Issues 联系；安全问题发送至 `849034843@qq.com`，不要在公开 Issue 中粘贴凭据、Cookie、Token 或业务数据。
 
 ## 持续许可证扫描
 
