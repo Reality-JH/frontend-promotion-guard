@@ -87,7 +87,7 @@ Two details matter for production use. `docker.requireImmutableImage: true` forc
 The smallest GitHub Actions integration is the non-mutating `verify` command plus an evidence upload on failure:
 
 ```yaml
-- uses: Reality-JH/frontend-promotion-guard@v0.3.0
+- uses: Reality-JH/frontend-promotion-guard@v0.4.0
   with:
     config: fpg.yml
     command: verify
@@ -111,7 +111,7 @@ node dist/cli.js verify --config fpg.broken-test.yml
 
 ## What is next
 
-Current exploration, in order of how confident I am it belongs: a `monitor` command for repeated checks against a live target; semantic visual diffing that compares accessibility snapshots, masks noisy regions, and freezes clocks to cut pixel flakiness; and remote baseline storage with richer GitHub reporting for teams that cannot commit megabytes of PNGs. Each of these narrows the gate's margin of error rather than widening its scope.
+Since this post was drafted, the exploration items landed: `fpg monitor` now re-checks a live target on an interval and fires a webhook on flips, ARIA snapshot diffing plus selector masking and clock freezing cut pixel flakiness, and `fpg baseline pull/push` syncs baselines to remote storage with a GitHub Actions summary writeback. Next up is deeper rollout-controller integration — the Argo Rollouts job and Flagger webhook shapes are documented in `docs/integrations.md`.
 
 ## The point
 

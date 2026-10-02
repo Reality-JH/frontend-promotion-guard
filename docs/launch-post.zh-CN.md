@@ -87,7 +87,7 @@ FPG 是一个 TypeScript CLI，要求 Node.js 20+ 和系统 Chrome 或 Edge；Do
 最小的 GitHub Actions 接入是不改变状态的 `verify`，加失败时的证据上传：
 
 ```yaml
-- uses: Reality-JH/frontend-promotion-guard@v0.3.0
+- uses: Reality-JH/frontend-promotion-guard@v0.4.0
   with:
     config: fpg.yml
     command: verify
@@ -111,7 +111,7 @@ node dist/cli.js verify --config fpg.broken-test.yml
 
 ## 下一步
 
-当前探索中的方向，按我确信它该做的程度排序：面向存活目标做周期性检查的 `monitor` 命令；对比无障碍快照、屏蔽噪声区域、冻结时钟的语义化视觉对比，用来降低像素抖动；以及远程基线存储与更完整的 GitHub 报告，服务不便在仓库里提交大量 PNG 的团队。每一项都是收窄门禁的误差边界，而不是扩大它的边界。
+本文起草时还在探索的方向已经落地：`fpg monitor` 按间隔复查存活目标并在状态翻转时触发 webhook；ARIA 快照对比配合选择器遮罩与时钟冻结降低像素抖动；`fpg baseline pull/push` 把基线同步到远端存储并向 GitHub Actions 写回摘要。下一步是更深的发布控制器集成——Argo Rollouts job 和 Flagger webhook 的对接形态见 `docs/integrations.md`。
 
 ## 要点
 
