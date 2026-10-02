@@ -96,7 +96,7 @@ export async function captureAndCompare(config: FpgConfig, runDir: string, optio
             await copyFile(baseline, baselineEvidence);
             const compared = await comparePng(baseline, current, diff, config.visual.pixelThreshold);
             const status = compared.ratio <= config.visual.maxDiffPixelRatio ? "passed" : "failed";
-            if (status === "failed") failures.push(`${label}: visual diff ${(compared.ratio * 100).toFixed(2)}% exceeds ${(config.visual.maxDiffPixelRatio * 100).toFixed(2)}%`);
+            if (status === "failed") failures.push(`${label}: visual diff ${(compared.ratio * 100).toFixed(4)}% exceeds ${(config.visual.maxDiffPixelRatio * 100).toFixed(4)}%`);
             visuals.push(visual(route.name, viewport, baselineEvidence, current, diff, compared.ratio, status, runDir));
           }
         } else {

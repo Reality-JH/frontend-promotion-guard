@@ -44,7 +44,7 @@ test("masked regions do not trigger pixel diff failures", async () => {
   const root = await mkdtemp(join(tmpdir(), "fpg-mask-"));
   const baselineDir = join(root, "baselines");
   const config = {
-    baseUrl: "data:text/html,<main><div id=ad style='width:120px;height:120px'></div><p>stable</p></main><script>ad.style.background='rgb('+Math.floor(Math.random()*255)+',0,0)';ad.textContent=Math.random().toString(36).slice(2)</script>",
+    baseUrl: "data:text/html,<main><div id=ad style='width:120px;height:120px;overflow:hidden'></div><p>stable</p></main><script>ad.style.background='rgb('+Math.floor(Math.random()*255)+',0,0)';ad.textContent=Math.random().toString(36).slice(2)</script>",
     routes: [{ name: "home", path: "", readySelector: "main" }],
     viewports: [{ width: 320, height: 200 }],
     computedStyles: [],
