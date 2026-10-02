@@ -2,6 +2,8 @@ export type RouteConfig = {
     name: string;
     path: string;
     readySelector: string;
+    waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
+    fullPage?: boolean;
 };
 export type ViewportConfig = {
     width: number;
@@ -66,6 +68,11 @@ export type FpgConfig = {
         baselineDir: string;
         evidenceDir: string;
         retention: number;
+        maskSelectors?: string[];
+        freezeTime?: string;
+        ariaSnapshot?: boolean;
+        ariaSnapshotMode?: "warn" | "fail";
+        fullPage?: boolean;
         remoteSync?: {
             pull?: RemoteSyncCommand;
             push?: RemoteSyncCommand;
@@ -87,6 +94,9 @@ export type VisualResult = {
     diff: string;
     diffPixelRatio: number;
     status: "passed" | "failed";
+    ariaStatus?: "passed" | "warn" | "failed";
+    ariaDiff?: string;
+    ariaDiffText?: string;
 };
 export type RunRecord = {
     startedAt: string;

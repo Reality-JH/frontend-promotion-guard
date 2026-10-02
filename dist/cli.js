@@ -4,13 +4,16 @@ import { join, resolve } from "node:path";
 import { auditCss } from "./audit.js";
 import { loadConfig } from "./config.js";
 import { promote, rollback } from "./docker.js";
+import { writeGithubOutputs } from "./github.js";
 import { runMonitor } from "./monitor.js";
 import { loadRecord, saveRecord } from "./report.js";
+import { syncBaselines } from "./storage.js";
 import { browserIdentity, captureAndCompare } from "./visual.js";
 import { ensureDir, exists, pruneRuns, run, withReleaseLock } from "./utils.js";
 const args = process.argv.slice(2);
 const configArg = option("--config") ?? "fpg.yml";
 const command = positional(args);
+const github = args.includes("--github");
 if (args.includes("--help") || command.length === 0) {
     console.log(`Frontend Promotion Guard
 
@@ -18,8 +21,10 @@ Usage:
   fpg audit [--config fpg.yml]
   fpg capture [--config fpg.yml] [--base-url URL]
   fpg compare [--config fpg.yml] [--base-url URL]
-  fpg verify [--config fpg.yml] [--base-url URL]
+  fpg verify [--config fpg.yml] [--base-url URL] [--github]
   fpg baseline update [--config fpg.yml] [--base-url URL]
+  fpg baseline pull [--config fpg.yml]
+  fpg baseline push [--config fpg.yml]
   fpg promote [--config fpg.yml]
   fpg rollback IMAGE [--config fpg.yml]
   fpg report [--config fpg.yml]
@@ -40,6 +45,10 @@ try {
     else if (command[0] === "rollback") {
         await withReleaseLock(config.rootDir, await commit(), () => rollback(config, command[1]));
         console.log(`Rolled back to ${command[1]}`);
+    }
+    else if (action === "baseline pull" || action === "baseline push") {
+        await syncBaselines(config, command[1]);
+        console.log(`Baseline ${command[1]} complete: ${config.visual.baselineDir}`);
     }
     else if (action === "monitor") {
         await runMonitor(config, { once: args.includes("--once"), baseUrl: option("--base-url") });
@@ -79,6 +88,16 @@ try {
             mergeError(record, error);
             await saveRecord(runDir, record);
             throw error;
+        }
+        finally {
+            if (github && action === "verify") {
+                try {
+                    await writeGithubOutputs(runDir, record);
+                }
+                catch (writeback) {
+                    console.error(`GitHub writeback failed: ${writeback instanceof Error ? writeback.message : String(writeback)}`);
+                }
+            }
         }
         await saveRecord(runDir, record);
         console.log(`${action} passed\nReport: ${join(runDir, "report.html")}`);
