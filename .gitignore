@@ -8,3 +8,5 @@ visual-baselines/*.png
 !.env.example
 .fpg-release.lock/
 .fpg-docker-integration.yml
+monitor-state.json
+monitor-state.json.tmp

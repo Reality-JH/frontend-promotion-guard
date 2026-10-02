@@ -5,6 +5,7 @@ import { auditCss } from "./audit.js";
 import { loadConfig } from "./config.js";
 import { promote, rollback } from "./docker.js";
 import { writeGithubOutputs } from "./github.js";
+import { runMonitor } from "./monitor.js";
 import { loadRecord, saveRecord } from "./report.js";
 import { syncBaselines } from "./storage.js";
 import type { RunRecord } from "./types.js";
@@ -29,7 +30,8 @@ Usage:
   fpg baseline push [--config fpg.yml]
   fpg promote [--config fpg.yml]
   fpg rollback IMAGE [--config fpg.yml]
-  fpg report [--config fpg.yml]`);
+  fpg report [--config fpg.yml]
+  fpg monitor [--config fpg.yml] [--base-url URL] [--once]`);
   process.exit(0);
 }
 
@@ -49,6 +51,8 @@ try {
   } else if (action === "baseline pull" || action === "baseline push") {
     await syncBaselines(config, command[1] as "pull" | "push");
     console.log(`Baseline ${command[1]} complete: ${config.visual.baselineDir}`);
+  } else if (action === "monitor") {
+    await runMonitor(config, { once: args.includes("--once"), baseUrl: option("--base-url") });
   } else {
     const runDir = await newRunDir(action);
     const record: RunRecord = { startedAt: new Date().toISOString(), command: action, baseUrl: config.baseUrl, commit: await commit(), environment: { platform: `${process.platform} ${process.arch}`, node: process.version }, configSummary: { routes: config.routes.map((route) => route.path), viewports: config.viewports.map((viewport) => `${viewport.width}x${viewport.height}`), maxDiffPixelRatio: config.visual.maxDiffPixelRatio, pixelThreshold: config.visual.pixelThreshold }, checks: [], visuals: [] };

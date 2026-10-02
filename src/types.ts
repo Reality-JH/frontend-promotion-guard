@@ -20,6 +20,17 @@ export type DockerConfig = {
   requireImmutableImage: boolean;
 };
 
+export type MonitorWebhook = { url: string; headers: Record<string, string>; timeoutMs: number };
+export type MonitorConfig = {
+  interval: string;
+  intervalMs: number;
+  failureThreshold: number;
+  recoveryNotify: boolean;
+  webhook?: MonitorWebhook;
+  stateFile: string;
+  baseUrl?: string;
+};
+
 export type FpgConfig = {
   configPath: string;
   rootDir: string;
@@ -31,6 +42,7 @@ export type FpgConfig = {
   computedStyles: StyleAssertion[];
   visual: { maxDiffPixelRatio: number; pixelThreshold: number; baselineDir: string; evidenceDir: string; retention: number; maskSelectors?: string[]; freezeTime?: string; ariaSnapshot?: boolean; ariaSnapshotMode?: "warn" | "fail"; fullPage?: boolean; remoteSync?: { pull?: RemoteSyncCommand; push?: RemoteSyncCommand } };
   docker?: DockerConfig;
+  monitor?: MonitorConfig;
 };
 
 export type CheckResult = { name: string; status: "passed" | "failed"; detail: string };

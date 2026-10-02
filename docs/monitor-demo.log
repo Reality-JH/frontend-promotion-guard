@@ -1,0 +1,63 @@
+FPG monitor live demo, 2026-09-30, Windows, Node v24.18.0, system Chrome.
+
+Setup
+  npm run example:build
+  npm run example:serve -- --port 4273        # vite preview of examples/vite-react
+  node sink.mjs                                # node:http webhook receiver on 127.0.0.1:9807
+  node dist/cli.js baseline update --config fpg.yml
+  node dist/cli.js monitor --config fpg.yml    # interval 2s, failureThreshold 1
+
+Demo config (fpg.yml)
+  baseUrl: http://127.0.0.1:4273
+  routes: [{ name: home, path: /, readySelector: main }]
+  viewports: [{ width: 1280, height: 900 }, { width: 768, height: 900 }]
+  computedStyles: [{ selector: main, property: display, notEquals: none }]
+  visual: { baselineDir: ./baselines, evidenceDir: ./evidence, retention: 6 }
+  monitor:
+    interval: 2s
+    failureThreshold: 1
+    recoveryNotify: true
+    stateFile: ./state.json
+    webhook: { url: http://127.0.0.1:9807/fpg, timeoutMs: 3000 }
+
+Timeline
+  ~06:24:40  monitor started, site healthy, rounds pass, no alerts
+  ~06:25:00  vite preview killed with taskkill, connection refused
+  06:25:11   single "down" webhook delivered; 7 subsequent failing rounds
+             produced no repeat alerts
+  ~06:25:55  vite preview restarted
+  06:26:09   single "recovered" webhook delivered; later rounds pass silently
+  06:26:4x   monitor stopped
+
+monitor stdout
+  [monitor] http://127.0.0.1:4273 every 2s; down after 1 consecutive failure(s)
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 failing 1/1: home 1280x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/ (+7 more)
+  [monitor] http://127.0.0.1:4273 failing 2/1: home 1280x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/ (+7 more)
+  [monitor] http://127.0.0.1:4273 failing 3/1: home 1280x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/ (+7 more)
+  [monitor] http://127.0.0.1:4273 failing 4/1: home 1280x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/ (+7 more)
+  [monitor] http://127.0.0.1:4273 failing 5/1: home 1280x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/ (+7 more)
+  [monitor] http://127.0.0.1:4273 failing 6/1: home 1280x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/ (+7 more)
+  [monitor] http://127.0.0.1:4273 failing 7/1: home 1280x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/ (+7 more)
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 up
+  [monitor] http://127.0.0.1:4273 up
+
+webhook payloads received by sink.mjs
+  06:25:11 {"event":"down","target":"http://127.0.0.1:4273","failures":["home 1280x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/","...","home 768x900: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4273/","..."],"reportPath":"evidence\2026-09-30T06-25-02-450Z-monitor\report.html","at":"2026-09-30T06:25:10.953Z"}
+  06:26:09 {"event":"recovered","target":"http://127.0.0.1:4273","failures":[],"reportPath":"evidence\2026-09-30T06-26-05-636Z-monitor\report.html","at":"2026-09-30T06:26:09.616Z"}
+
+state.json at end of demo
+  {
+    "status": "up",
+    "consecutiveFailures": 0,
+    "lastCheckedAt": "2026-09-30T06:26:40.663Z",
+    "lastEvent": "recovered",
+    "lastEventAt": "2026-09-30T06:26:09.616Z"
+  }
