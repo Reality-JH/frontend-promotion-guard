@@ -26,6 +26,8 @@ export async function loadConfig(path = "fpg.yml"): Promise<FpgConfig> {
     const routePath = nonEmptyString(item.path, `routes[${index}].path`);
     if (!routePath.startsWith("/")) throw new Error(`routes[${index}].path must start with /`);
     nonEmptyString(item.readySelector, `routes[${index}].readySelector`);
+    if (item.waitUntil !== undefined && !["load", "domcontentloaded", "networkidle", "commit"].includes(item.waitUntil as string)) throw new Error(`routes[${index}].waitUntil must be one of load, domcontentloaded, networkidle, commit`);
+    if (item.fullPage !== undefined && typeof item.fullPage !== "boolean") throw new Error(`routes[${index}].fullPage must be a boolean`);
   });
   if (new Set(routes.map((route) => route.name)).size !== routes.length) throw new Error("routes names must be unique");
   viewports.forEach((viewport, index) => {
@@ -67,6 +69,16 @@ export async function loadConfig(path = "fpg.yml"): Promise<FpgConfig> {
   const ratio = ratioValue(visual.maxDiffPixelRatio ?? 0.12, "visual.maxDiffPixelRatio");
   const pixelThreshold = ratioValue(visual.pixelThreshold ?? 0.2, "visual.pixelThreshold");
   const retention = nonNegativeInteger(visual.retention ?? 10, "visual.retention");
+  const maskSelectors = strings(visual.maskSelectors);
+  const ariaSnapshot = booleanValue(visual.ariaSnapshot ?? false, "visual.ariaSnapshot");
+  const ariaSnapshotMode = visual.ariaSnapshotMode ?? "fail";
+  if (ariaSnapshotMode !== "fail" && ariaSnapshotMode !== "warn") throw new Error("visual.ariaSnapshotMode must be warn or fail");
+  const visualFullPage = booleanValue(visual.fullPage ?? false, "visual.fullPage");
+  let freezeTime: string | undefined;
+  if (visual.freezeTime !== undefined) {
+    freezeTime = nonEmptyString(visual.freezeTime, "visual.freezeTime");
+    if (Number.isNaN(Date.parse(freezeTime))) throw new Error("visual.freezeTime must be an ISO 8601 time string");
+  }
   const baseUrl = nonEmptyString(raw.baseUrl ?? "http://127.0.0.1:3100", "baseUrl").replace(/\/$/, "");
   let parsedUrl: URL;
   try { parsedUrl = new URL(baseUrl); } catch { throw new Error("baseUrl must be an http or https URL"); }
@@ -90,6 +102,11 @@ export async function loadConfig(path = "fpg.yml"): Promise<FpgConfig> {
       baselineDir: resolve(rootDir, nonEmptyString(visual.baselineDir ?? "visual-baselines", "visual.baselineDir")),
       evidenceDir: resolve(rootDir, nonEmptyString(visual.evidenceDir ?? "release-evidence", "visual.evidenceDir")),
       retention,
+      maskSelectors,
+      freezeTime,
+      ariaSnapshot,
+      ariaSnapshotMode,
+      fullPage: visualFullPage,
     },
     docker,
   };

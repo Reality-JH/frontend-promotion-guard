@@ -4,6 +4,7 @@ routes:
   - name: home
     path: /
     readySelector: main
+    # Optional per route: waitUntil (load|domcontentloaded|networkidle|commit), fullPage (boolean)
   - name: details
     path: /details
     readySelector: "[data-page=details]"
@@ -34,6 +35,14 @@ visual:
   baselineDir: ./visual-baselines
   evidenceDir: ./release-evidence
   retention: 10
+  # Selectors masked out of the pixel diff (ads, timestamps, carousels).
+  maskSelectors: []
+  # Capture and diff a Playwright ARIA snapshot per route and viewport.
+  ariaSnapshot: false
+  # warn reports changes without failing the gate; fail is the default.
+  ariaSnapshotMode: fail
+  # Freeze page clocks at an ISO 8601 instant, e.g. freezeTime: "2026-01-01T00:00:00Z"
+  # fullPage: false
 
 docker:
   candidateImage: fpg-demo:candidate
