@@ -1,96 +1,120 @@
-# Your backend build is green. Your frontend can still be broken.
+# Green build, healthy container, broken page
 
-Backend developers are used to trusting a few signals: the image built, the health check passed, and the endpoint returned 200.
+![A browser window held at a checkpoint gate between two server racks](./assets/launch-hero.webp)
 
-Those signals are useful. They are not enough for a browser.
+The release pipeline did everything it promised. The image built. The container came up. The health endpoint returned 200 in under a second, and the load balancer started sending traffic.
 
-A page can return its HTML successfully while its CSS is missing, uncompiled, or pointing at the wrong asset path. The container stays healthy. The load balancer stays happy. A user opens the page and sees a layout that has quietly fallen apart.
+The page was still broken. Somewhere between the build output and the browser, the stylesheet had turned into a stub: an HTTP 200 response with no rules in it. Users got unstyled HTML where the interface used to be.
 
-Here is the failure in plain sight:
+Nothing in that pipeline lied. Every check answered the question it was asked. The problem is that none of the checks were asked the right question: does the page a user receives still render the way it did when the team approved it?
 
 | Broken after release | Correct rendering |
 | --- | --- |
 | ![Broken frontend layout](./assets/frontend-css-broken.png) | ![Correct frontend layout](./assets/frontend-css-restored.png) |
 
-The point is not that every visual change is a failure. The point is that a page that lost its CSS should not reach production while build and health checks remain green.
+This is the incident shape [Frontend Promotion Guard](https://github.com/Reality-JH/frontend-promotion-guard) (FPG) is built for: technically healthy, visibly broken.
 
-That failure is especially frustrating when frontend work is not your main job. You do not need another design system. You need a small, repeatable answer to one question:
+## Two blind spots
 
-> Does the page users will receive still look and behave like the page we approved?
+**Health checks measure liveness, not correctness.** A 200 on `/` means the server answered. It says nothing about which bytes the browser received for the stylesheet, whether the asset path still resolves after a CDN or reverse proxy change, or whether the CSS that arrived is the CSS the build produced. In the scenario above every probe stayed green while the page shipped with no rules at all.
 
-## Frontend Promotion Guard
+**Screenshot diffing alone has a threshold problem.** Pixel comparison is a good tripwire and a weak judge. Below is a real run against a deliberately broken demo server: the stylesheet endpoint returns `/* intentionally broken */` with status 200, and the page loses all styling. The measured pixel diff is 5.537 percent. The configured ceiling in the demo config is 12 percent. A pixel-only gate would mark this release acceptable.
 
-[Frontend Promotion Guard](../README.md) is a release gate for that question.
+![Report card comparing baseline, unstyled current page, and red diff overlay at 5.537 percent](./assets/fpg-report-triptych.png)
 
-It checks the built CSS before the browser sees it. It opens the running page in a real Chrome or Edge executable and checks computed styles. It captures configured routes at configured widths and compares them with protected baselines. When Docker is part of the release, it runs the candidate on an isolated port, promotes only after acceptance, and restores the previous image if production re-verification fails.
+The tripwire value of pixel diff stays. The judgment needs a second signal that understands what the page is supposed to be.
 
-The important detail is the order. A healthy container is not promoted just because it is healthy.
+## A gate with three levels
 
-## What the gate catches
+FPG is a TypeScript CLI. It needs Node.js 20+ and a system Chrome or Edge; Docker is optional and only used by the release level. It models a frontend release as three gates, each with a different blast radius:
 
-The example project includes two routes and four viewports. Its checks cover:
+- `fpg audit` checks the artifact. It globs the emitted CSS files, fails on leftover source directives (`@apply`, `@theme`, `@utility`, `@custom-variant` in the example config), and fails when required selectors are missing. No browser, no services, no side effects.
+- `fpg verify` checks the wire. It runs the audit, then drives a real Chrome or Edge through every configured route at every configured viewport: computed-style assertions (`selector`, `property`, exactly one of `equals` or `notEquals`), horizontal overflow measurement, console error collection, and a pixelmatch comparison against committed baselines. It observes a running target and changes nothing.
+- `fpg promote` checks the release. With Docker configured, it snapshots the current production image ID under a timestamped rollback tag, starts the candidate container on an isolated port, runs the full verification against that port, and only then tags the candidate into production and re-verifies it. If production verification fails, it restores the snapshot and verifies the restore. A repository-local release lock refuses concurrent `promote` or `rollback` runs and reports the lock owner's PID, start time, and commit.
 
-- CSS output that still contains source directives such as `@apply`.
-- Required selectors that disappeared from the build.
-- A critical element whose computed `display` changed.
-- Horizontal overflow at the target widths.
-- Browser console errors.
-- Screenshot differences above the configured pixel ratio.
-- A candidate container that passes while the current production container stays untouched.
-- A production recheck that fails and triggers a rollback to the saved image.
+Two more commands complete the set. `fpg baseline update` is the only writer of visual baselines: it is explicit by design, a failed run never replaces a baseline, and every update writes `visual-baselines/manifest.json` with a SHA-256 digest per approved image. `fpg report` regenerates the static HTML report for the most recent run. `capture` and `compare` split `verify` into its collection and regression halves for debugging.
 
-The gate does not replace feature tests, security tests, accessibility review, or a human looking at a new page. It handles a narrower problem and makes that problem harder to miss.
+Just as important is what the tool does not do. It does not replace feature tests, security tests, accessibility review, or human acceptance. A baseline exists because a human looked at the page and approved it. The gate makes sure the approval still holds after the release machinery has run.
 
-## Try it locally
+## What a run produces
 
-```bash
-npm install
-npm run build
-npm run example:build
-npm run example:serve
-```
+The whole arc in one terminal: `verify` passes on the healthy site, the same command fails against a server answering HTTP 200 with a stub stylesheet.
 
-In another terminal:
+![A verify run passes on the healthy demo site, then fails against the broken server with a computed-style error](./assets/fpg-verify-demo.svg)
 
-```bash
-node dist/cli.js baseline update --config fpg.example.yml
-node dist/cli.js verify --config fpg.example.yml
-```
+Every command writes a run directory under `release-evidence` containing `run.json` and a self-contained `report.html`: the git commit, base URL, browser version, platform, Node version, every check with its status and detail, every screenshot triptych with its diff ratio, and for promotions the image IDs, stage timings, and final production state. Cookie, Authorization, token, and similar credential patterns are redacted from the report.
 
-The first command is deliberately explicit. A failed test cannot replace a baseline. The second command writes a static report under `release-evidence` with the baseline, current image, diff image, commit, checks, and rollback state.
+A real `verify` run against the bundled Vite/React example (2 routes at 4 viewports, system Chrome reporting `chromium 154.0.8037.58`):
 
-To see the failure path, run the provided broken CSS server and verify against `fpg.broken-test.yml`. The page still answers HTTP requests, but the computed-style check fails.
+- 48 passed, 0 failed: 40 check rows plus 8 visual comparisons.
+- Every pixel diff at 0.000 percent. Total wall time 12.4 seconds.
 
-## Why this is useful for backend-led teams
+![A passing FPG report: 48 checks passed, zero failed, verification only](./assets/fpg-report-passed.png)
 
-You can keep the release contract close to the code you already own:
+The passing triptych shows why zero diff is achievable: baseline and current are the same rendering, and the diff panel is blank.
 
-1. Build the frontend.
-2. Start the candidate service.
-3. Run one command with a YAML file.
-4. Upload the evidence directory when the check fails.
+![Baseline and current identical, empty diff panel, 0.000 percent](./assets/fpg-report-triptych-passed.png)
 
-The tool does not ask you to adopt a hosted dashboard or move deployment to a new platform. It uses Node, a system browser, and optional Docker. Routes, selectors, viewports, ports, image names, thresholds, and evidence paths live in configuration.
+Now the same tool against the broken server (`fpg.broken-test.yml`, one route at 768x900):
 
-That keeps the useful part of frontend release work visible to people who spend most of their time in APIs, workers, queues, and containers.
+- The CSS audit passed. The files on disk were fine; the break was in delivery, which is exactly the split the two levels are meant to separate.
+- `home 768x900: .status-grid display` failed. Expected `grid`, computed `block`.
+- Horizontal overflow passed at 0px. The console had no errors. The pixel diff passed at 5.537 percent, under the 12 percent ceiling.
+- The command exited 1 after 3.9 seconds.
 
-## GitHub Actions
+![The failed checks table: audit rows green, .status-grid display failed with actual value block](./assets/fpg-report-checks.png)
 
-The repository includes a runnable Vite/React workflow and a cross-platform matrix. The smallest integration is:
+Read that list again. Four of the five browser-level signals said the page was fine. The computed-style assertion is the row that refused to sign off.
+
+## Promotion with a verified undo
+
+`promote` exists for the release where the container is the thing being shipped. On a real run with the demo Docker config:
+
+- Candidate stage passed in 12.0 seconds: the candidate container on its own port went through the same audits, computed styles, overflow, console, and pixel checks.
+- The production stage failed in 12.4 seconds: the promoted container served the broken stylesheet, and all 8 route-viewport computed-style assertions reported `block` instead of `grid`.
+- The rollback stage passed in 20.6 seconds: FPG recreated production from the timestamped snapshot taken before promotion, then ran the verification a third time to prove the restore actually worked.
+
+Total wall time was 48.2 seconds, the run record shows `finalState: restored` and `rolledBack: true`, and the report lists the candidate image ID, the previous and final production image IDs, and the rollback tag that was used.
+
+![Release stages table: candidate passed, production failed, rollback passed](./assets/fpg-report-stages.png)
+
+![The restored report: final state restored, rolled back yes, rollback reference and image IDs recorded](./assets/fpg-report-restored.png)
+
+Two details matter for production use. `docker.requireImmutableImage: true` forces digest or image ID references for pre-existing candidates and explicit rollbacks, and the record stores resolved image IDs even when ordinary tags are used, so the report names what actually ran rather than what the tag currently means. `fpg rollback IMAGE` is the manual escape hatch and follows the same verification rule.
+
+## In CI
+
+The smallest GitHub Actions integration is the non-mutating `verify` command plus an evidence upload on failure:
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.2.0
+- uses: Reality-JH/frontend-promotion-guard@v0.3.0
   with:
     config: fpg.yml
     command: verify
+- if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: frontend-promotion-evidence
+    path: release-evidence
 ```
 
-Upload `release-evidence` on failure. The report is a file a teammate can open, not a green check with no explanation.
+The Action refuses `baseline update` entirely, and `command: promote` only runs when `confirm-promotion: true` is set, so an accidental input change cannot mutate container state. Baseline updates stay a local, reviewed step: update, eyeball the old image and the diff, commit the images and the manifest through a pull request. Pin the runner OS, browser major version, and fonts when pixel stability matters.
 
-## A small tool with a clear limit
+To reproduce the runs above locally:
 
-Frontend Promotion Guard is not a promise that a page is correct. It is a refusal to call a release safe based only on build output, HTTP status, and container health.
+```bash
+npm ci && npm run build && npm run example:build && npm run example:serve
+node dist/cli.js verify --config fpg.example.yml
+FPG_BREAK_CSS=1 node examples/vite-react/server.mjs   # second terminal
+node dist/cli.js verify --config fpg.broken-test.yml
+```
 
-If your team has been paged because a release was technically healthy but visibly broken, this is the gap it is meant to close.
+## What is next
 
-Maintainer: Reality_JH. Security reports: `849034843@qq.com`.
+Current exploration, in order of how confident I am it belongs: a `monitor` command for repeated checks against a live target; semantic visual diffing that compares accessibility snapshots, masks noisy regions, and freezes clocks to cut pixel flakiness; and remote baseline storage with richer GitHub reporting for teams that cannot commit megabytes of PNGs. Each of these narrows the gate's margin of error rather than widening its scope.
+
+## The point
+
+FPG is not a promise that a page is correct. It is a refusal to call a release safe on the strength of build output, HTTP status, and container health alone. If your on-call story includes a deploy that was technically healthy and visibly broken, this is the gap the tool closes.
+
+Maintainer: Reality-JH. Security reports: `849034843@qq.com`.

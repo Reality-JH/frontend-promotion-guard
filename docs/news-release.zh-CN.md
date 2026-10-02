@@ -25,7 +25,7 @@ FPG 的边界很明确。它不能替代功能测试、安全测试、可访问�
 
 仓库：https://github.com/Reality-JH/frontend-promotion-guard
 
-维护者：Reality_JH
+维护者：Reality-JH
 
 安全联系：849034843@qq.com
 

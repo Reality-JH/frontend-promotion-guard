@@ -1,5 +1,7 @@
 # Frontend Promotion Guard
 
+[![CI](https://github.com/Reality-JH/frontend-promotion-guard/actions/workflows/matrix.yml/badge.svg)](https://github.com/Reality-JH/frontend-promotion-guard/actions/workflows/matrix.yml) [![Tag](https://img.shields.io/github/v/tag/Reality-JH/frontend-promotion-guard)](https://github.com/Reality-JH/frontend-promotion-guard/tags) [![License](https://img.shields.io/github/license/Reality-JH/frontend-promotion-guard)](./LICENSE)
+
 中文是本项目的翻译入口。[English](./README.md) · [v0.3.0 更新说明](./docs/v0.3.0-release.zh-CN.md) · [中文发布文章](./docs/launch-post.zh-CN.md)
 
 Frontend Promotion Guard（FPG）是一道独立的前端发布门禁。它针对一种常见事故：构建成功、HTTP 返回 200、容器健康，但线上 CSS 已丢失、布局损坏或页面视觉退化。
@@ -7,6 +9,8 @@ Frontend Promotion Guard（FPG）是一道独立的前端发布门禁。它针�
 FPG 在晋升正式镜像前依次检查构建后 CSS 语义、浏览器真实计算样式和多路由多宽度截图；候选容器通过后才晋升，正式环境复验失败则恢复上一镜像。每次运行都会生成可直接打开的静态 HTML 报告。
 
 它不替代功能测试、安全测试和人工验收。视觉基线必须由人确认页面正确后显式更新。
+
+![verify 先在健康的示例站上通过，随后同一命令在返回 HTTP 200 但样式表为空的服务上失败](./docs/assets/fpg-verify-demo.svg)
 
 ## 按当前事项选择最小门禁
 
@@ -95,7 +99,7 @@ fpg report
 ## GitHub Actions 最小接入
 
 ```yaml
-- uses: Reality_JH/frontend-promotion-guard@v0.3.0
+- uses: Reality-JH/frontend-promotion-guard@v0.3.0
   with:
     config: fpg.yml
     command: verify
@@ -110,9 +114,20 @@ fpg report
 
 Action 默认执行不会改变容器状态的 `verify`。只有明确的发布工作流使用 `command: promote` 时，才同时设置 `confirm-promotion: true`；普通 Pull Request 和功能开发工作流不应设置该开关。
 
+## 常见问题
+
+**构建通过、健康检查是绿的，但部署后的页面没有样式。什么能拦住？**
+这正是 FPG 针对的事故。`verify` 用真实 Chrome 或 Edge 打开已部署页面并断言计算样式：在仓库自带的断 CSS 演示中，页面以 HTTP 200 返回空样式表，像素差异停在 5.537% 低于 12% 配置上限，但计算样式断言因 `.status-grid` 计算出 `block` 而非 `grid` 判定运行失败。`audit` 拦截的是相邻的一类失败：构建产出的 CSS 根本没有编译。
+
+**它与 Percy、Chromatic、BackstopJS 或 Playwright 截图测试有什么区别？**
+这些工具覆盖视觉审查，或提供搭建门禁的框架。FPG 是一道自包含的发布门禁：附加构建 CSS 产物检查、计算样式断言、溢出与控制台检查、带可验证回退的 Docker 候选晋升，以及静态 HTML 证据报告。它跑在你自己的 runner 上，用系统浏览器，证据就是本地文件，不依赖 SaaS 面板。
+
+**它能替代功能测试或端到端测试吗？**
+不能。FPG 验收的是交付后的页面是否仍与批准的基线一致。它不会执行业务流程点击，也不能替代功能测试、安全测试、可访问性检查或新页面的人工验收。
+
 ## 维护者与联系
 
-维护者：`Reality_JH`。普通问题通过仓库 Issues 联系；安全问题发送至 `849034843@qq.com`，不要在公开 Issue 中粘贴凭据、Cookie、Token 或业务数据。
+维护者：`Reality-JH`。普通问题通过仓库 Issues 联系；安全问题发送至 `849034843@qq.com`，不要在公开 Issue 中粘贴凭据、Cookie、Token 或业务数据。
 
 ## 持续许可证扫描
 
