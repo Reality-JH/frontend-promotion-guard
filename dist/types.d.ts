@@ -2,8 +2,6 @@ export type RouteConfig = {
     name: string;
     path: string;
     readySelector: string;
-    waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
-    fullPage?: boolean;
 };
 export type ViewportConfig = {
     width: number;
@@ -14,6 +12,10 @@ export type StyleAssertion = {
     property: string;
     equals?: string;
     notEquals?: string;
+};
+export type RemoteSyncCommand = {
+    command: string;
+    args: string[];
 };
 export type DockerConfig = {
     candidateImage: string;
@@ -50,11 +52,10 @@ export type FpgConfig = {
         baselineDir: string;
         evidenceDir: string;
         retention: number;
-        maskSelectors?: string[];
-        freezeTime?: string;
-        ariaSnapshot?: boolean;
-        ariaSnapshotMode?: "warn" | "fail";
-        fullPage?: boolean;
+        remoteSync?: {
+            pull?: RemoteSyncCommand;
+            push?: RemoteSyncCommand;
+        };
     };
     docker?: DockerConfig;
 };
@@ -71,9 +72,6 @@ export type VisualResult = {
     diff: string;
     diffPixelRatio: number;
     status: "passed" | "failed";
-    ariaStatus?: "passed" | "warn" | "failed";
-    ariaDiff?: string;
-    ariaDiffText?: string;
 };
 export type RunRecord = {
     startedAt: string;

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parse } from "yaml";
-import type { DockerConfig, FpgConfig } from "./types.js";
+import type { DockerConfig, FpgConfig, RemoteSyncCommand } from "./types.js";
 
 type Raw = Record<string, unknown>;
 const required = <T>(value: T | undefined, name: string): T => {
@@ -79,6 +79,7 @@ export async function loadConfig(path = "fpg.yml"): Promise<FpgConfig> {
     freezeTime = nonEmptyString(visual.freezeTime, "visual.freezeTime");
     if (Number.isNaN(Date.parse(freezeTime))) throw new Error("visual.freezeTime must be an ISO 8601 time string");
   }
+  const remoteSyncRaw = visual.remoteSync === undefined ? undefined : object(visual.remoteSync, "visual.remoteSync");
   const baseUrl = nonEmptyString(raw.baseUrl ?? "http://127.0.0.1:3100", "baseUrl").replace(/\/$/, "");
   let parsedUrl: URL;
   try { parsedUrl = new URL(baseUrl); } catch { throw new Error("baseUrl must be an http or https URL"); }
@@ -107,6 +108,7 @@ export async function loadConfig(path = "fpg.yml"): Promise<FpgConfig> {
       ariaSnapshot,
       ariaSnapshotMode,
       fullPage: visualFullPage,
+      remoteSync: remoteSyncRaw ? { pull: syncCommand(remoteSyncRaw.pull, "visual.remoteSync.pull"), push: syncCommand(remoteSyncRaw.push, "visual.remoteSync.push") } : undefined,
     },
     docker,
   };
@@ -140,6 +142,12 @@ function ratioValue(value: unknown, name: string): number {
 function booleanValue(value: unknown, name: string): boolean {
   if (typeof value !== "boolean") throw new Error(`${name} must be a boolean`);
   return value;
+}
+
+function syncCommand(value: unknown, name: string): RemoteSyncCommand | undefined {
+  if (value === undefined) return undefined;
+  const item = object(value, name);
+  return { command: nonEmptyString(item.command, `${name}.command`), args: strings(item.args) };
 }
 
 function strings(value: unknown): string[] {

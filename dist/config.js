@@ -26,10 +26,6 @@ export async function loadConfig(path = "fpg.yml") {
         if (!routePath.startsWith("/"))
             throw new Error(`routes[${index}].path must start with /`);
         nonEmptyString(item.readySelector, `routes[${index}].readySelector`);
-        if (item.waitUntil !== undefined && !["load", "domcontentloaded", "networkidle", "commit"].includes(item.waitUntil))
-            throw new Error(`routes[${index}].waitUntil must be one of load, domcontentloaded, networkidle, commit`);
-        if (item.fullPage !== undefined && typeof item.fullPage !== "boolean")
-            throw new Error(`routes[${index}].fullPage must be a boolean`);
     });
     if (new Set(routes.map((route) => route.name)).size !== routes.length)
         throw new Error("routes names must be unique");
@@ -80,18 +76,7 @@ export async function loadConfig(path = "fpg.yml") {
     const ratio = ratioValue(visual.maxDiffPixelRatio ?? 0.12, "visual.maxDiffPixelRatio");
     const pixelThreshold = ratioValue(visual.pixelThreshold ?? 0.2, "visual.pixelThreshold");
     const retention = nonNegativeInteger(visual.retention ?? 10, "visual.retention");
-    const maskSelectors = strings(visual.maskSelectors);
-    const ariaSnapshot = booleanValue(visual.ariaSnapshot ?? false, "visual.ariaSnapshot");
-    const ariaSnapshotMode = visual.ariaSnapshotMode ?? "fail";
-    if (ariaSnapshotMode !== "fail" && ariaSnapshotMode !== "warn")
-        throw new Error("visual.ariaSnapshotMode must be warn or fail");
-    const visualFullPage = booleanValue(visual.fullPage ?? false, "visual.fullPage");
-    let freezeTime;
-    if (visual.freezeTime !== undefined) {
-        freezeTime = nonEmptyString(visual.freezeTime, "visual.freezeTime");
-        if (Number.isNaN(Date.parse(freezeTime)))
-            throw new Error("visual.freezeTime must be an ISO 8601 time string");
-    }
+    const remoteSyncRaw = visual.remoteSync === undefined ? undefined : object(visual.remoteSync, "visual.remoteSync");
     const baseUrl = nonEmptyString(raw.baseUrl ?? "http://127.0.0.1:3100", "baseUrl").replace(/\/$/, "");
     let parsedUrl;
     try {
@@ -121,11 +106,7 @@ export async function loadConfig(path = "fpg.yml") {
             baselineDir: resolve(rootDir, nonEmptyString(visual.baselineDir ?? "visual-baselines", "visual.baselineDir")),
             evidenceDir: resolve(rootDir, nonEmptyString(visual.evidenceDir ?? "release-evidence", "visual.evidenceDir")),
             retention,
-            maskSelectors,
-            freezeTime,
-            ariaSnapshot,
-            ariaSnapshotMode,
-            fullPage: visualFullPage,
+            remoteSync: remoteSyncRaw ? { pull: syncCommand(remoteSyncRaw.pull, "visual.remoteSync.pull"), push: syncCommand(remoteSyncRaw.push, "visual.remoteSync.push") } : undefined,
         },
         docker,
     };
@@ -165,6 +146,12 @@ function booleanValue(value, name) {
     if (typeof value !== "boolean")
         throw new Error(`${name} must be a boolean`);
     return value;
+}
+function syncCommand(value, name) {
+    if (value === undefined)
+        return undefined;
+    const item = object(value, name);
+    return { command: nonEmptyString(item.command, `${name}.command`), args: strings(item.args) };
 }
 function strings(value) {
     if (value === undefined)

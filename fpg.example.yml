@@ -43,6 +43,11 @@ visual:
   ariaSnapshotMode: fail
   # Freeze page clocks at an ISO 8601 instant, e.g. freezeTime: "2026-01-01T00:00:00Z"
   # fullPage: false
+  # Optional remote baseline store for `fpg baseline pull` / `fpg baseline push`.
+  # Each entry runs as `command` + `args` array (no shell) from the project root.
+  # remoteSync:
+  #   pull: { command: aws, args: [s3, sync, s3://example-bucket/fpg-baselines, ./visual-baselines] }
+  #   push: { command: aws, args: [s3, sync, ./visual-baselines, s3://example-bucket/fpg-baselines, --delete] }
 
 docker:
   candidateImage: fpg-demo:candidate

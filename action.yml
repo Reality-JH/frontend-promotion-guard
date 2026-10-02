@@ -6,13 +6,24 @@ inputs:
     required: false
     default: fpg.yml
   command:
-    description: FPG command (audit, verify, capture, compare, promote, report).
+    description: FPG command (audit, verify, capture, compare, baseline-pull, baseline-push, promote, report).
     required: false
     default: verify
   confirm-promotion:
     description: Must be true when command is promote. Prevents ordinary checks from mutating production state.
     required: false
     default: "false"
+  github:
+    description: Pass --github so verify appends a Job Summary and writes result/diffRatio step outputs.
+    required: false
+    default: "true"
+outputs:
+  result:
+    description: Gate outcome reported by the run step (passed or failed).
+    value: ${{ steps.fpg.outputs.result }}
+  diffRatio:
+    description: Maximum visual diff pixel ratio observed by the run step.
+    value: ${{ steps.fpg.outputs.diffRatio }}
 runs:
   using: composite
   steps:
@@ -20,15 +31,25 @@ runs:
       shell: bash
       run: npm ci --omit=dev --ignore-scripts --prefix "${{ github.action_path }}"
     - name: Run Frontend Promotion Guard
+      id: fpg
       shell: bash
       env:
         FPG_ACTION_COMMAND: ${{ inputs.command }}
         FPG_ACTION_CONFIG: ${{ inputs.config }}
         FPG_CONFIRM_PROMOTION: ${{ inputs['confirm-promotion'] }}
+        FPG_GITHUB: ${{ inputs.github }}
       run: |
+        EXTRA=()
+        if [ "$FPG_GITHUB" = "true" ]; then EXTRA+=(--github); fi
         case "$FPG_ACTION_COMMAND" in
           audit|capture|compare|verify|report)
-            node "${{ github.action_path }}/dist/cli.js" "$FPG_ACTION_COMMAND" --config "$FPG_ACTION_CONFIG"
+            node "${{ github.action_path }}/dist/cli.js" "$FPG_ACTION_COMMAND" --config "$FPG_ACTION_CONFIG" "${EXTRA[@]}"
+            ;;
+          baseline-pull)
+            node "${{ github.action_path }}/dist/cli.js" baseline pull --config "$FPG_ACTION_CONFIG"
+            ;;
+          baseline-push)
+            node "${{ github.action_path }}/dist/cli.js" baseline push --config "$FPG_ACTION_CONFIG"
             ;;
           promote)
             if [ "$FPG_CONFIRM_PROMOTION" != "true" ]; then

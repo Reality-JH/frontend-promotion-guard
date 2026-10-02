@@ -1,6 +1,7 @@
 export type RouteConfig = { name: string; path: string; readySelector: string; waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit"; fullPage?: boolean };
 export type ViewportConfig = { width: number; height: number };
 export type StyleAssertion = { selector: string; property: string; equals?: string; notEquals?: string };
+export type RemoteSyncCommand = { command: string; args: string[] };
 
 export type DockerConfig = {
   candidateImage: string;
@@ -28,7 +29,7 @@ export type FpgConfig = {
   viewports: ViewportConfig[];
   cssAudit: { files: string[]; forbiddenTokens: string[]; requiredSelectors: string[] };
   computedStyles: StyleAssertion[];
-  visual: { maxDiffPixelRatio: number; pixelThreshold: number; baselineDir: string; evidenceDir: string; retention: number; maskSelectors?: string[]; freezeTime?: string; ariaSnapshot?: boolean; ariaSnapshotMode?: "warn" | "fail"; fullPage?: boolean };
+  visual: { maxDiffPixelRatio: number; pixelThreshold: number; baselineDir: string; evidenceDir: string; retention: number; maskSelectors?: string[]; freezeTime?: string; ariaSnapshot?: boolean; ariaSnapshotMode?: "warn" | "fail"; fullPage?: boolean; remoteSync?: { pull?: RemoteSyncCommand; push?: RemoteSyncCommand } };
   docker?: DockerConfig;
 };
 
